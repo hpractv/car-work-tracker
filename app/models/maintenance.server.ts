@@ -21,6 +21,7 @@ export async function createMaintenanceRecord(data: {
   cost?: number | null;
   vendor?: string | null;
   description?: string | null;
+  receiptUrl?: string | null;
 }) {
   return db.$transaction(async (tx) => {
     const record = await tx.maintenanceRecord.create({ data });
@@ -42,6 +43,7 @@ export async function updateMaintenanceRecord(
     cost?: number | null;
     vendor?: string | null;
     description?: string | null;
+    receiptUrl?: string | null;
   }
 ) {
   return db.$transaction(async (tx) => {

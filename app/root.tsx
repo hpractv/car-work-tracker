@@ -13,6 +13,7 @@ import {
 import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { getUserId } from "~/session.server";
+import { db } from "~/db.server";
 import OfflineIndicator from "~/components/OfflineIndicator";
 
 export const links: LinksFunction = () => [
@@ -23,7 +24,49 @@ export const links: LinksFunction = () => [
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await getUserId(request);
-  return json({ isLoggedIn: !!userId });
+  let dueCount = 0;
+  if (userId) {
+    try {
+      const cars = await db.car.findMany({
+        where: { members: { some: { userId } } },
+        select: { id: true, currentMileage: true },
+      });
+      if (cars.length > 0) {
+        const carIds = cars.map(c => c.id);
+        const [types, records] = await Promise.all([
+          db.maintenanceType.findMany(),
+          db.maintenanceRecord.findMany({
+            where: { carId: { in: carIds } },
+            orderBy: { date: "desc" },
+            select: { carId: true, type: true, date: true, mileage: true },
+          }),
+        ]);
+        const recordsByCarId = new Map<string, typeof records>();
+        for (const record of records) {
+          if (!recordsByCarId.has(record.carId)) recordsByCarId.set(record.carId, []);
+          recordsByCarId.get(record.carId)!.push(record);
+        }
+        const now = new Date();
+        for (const car of cars) {
+          const carRecords = recordsByCarId.get(car.id) ?? [];
+          for (const mt of types) {
+            if (!mt.defaultIntervalMiles && !mt.defaultIntervalMonths) continue;
+            const lastRecord = carRecords.find(r => r.type === mt.name);
+            if (!lastRecord) continue;
+            if (mt.defaultIntervalMiles && (car.currentMileage - lastRecord.mileage) >= mt.defaultIntervalMiles) {
+              dueCount++;
+            } else if (mt.defaultIntervalMonths) {
+              const monthsSince = (now.getTime() - new Date(lastRecord.date).getTime()) / (1000 * 60 * 60 * 24 * 30);
+              if (monthsSince >= mt.defaultIntervalMonths) dueCount++;
+            }
+          }
+        }
+      }
+    } catch {
+      dueCount = 0;
+    }
+  }
+  return json({ isLoggedIn: !!userId, dueCount });
 }
 
 export function meta() {
@@ -37,7 +80,7 @@ export function meta() {
   ];
 }
 
-function NavBar({ isLoggedIn }: { isLoggedIn: boolean }) {
+function NavBar({ isLoggedIn, dueCount }: { isLoggedIn: boolean; dueCount: number }) {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <nav className="navbar">
@@ -53,9 +96,27 @@ function NavBar({ isLoggedIn }: { isLoggedIn: boolean }) {
       <div className={`nav-links${menuOpen ? " nav-open" : ""}`}>
         {isLoggedIn ? (
           <>
-            <a href="/" onClick={() => setMenuOpen(false)}>Dashboard</a>
+            <a href="/" onClick={() => setMenuOpen(false)}>
+              Dashboard
+              {dueCount > 0 && (
+                <span style={{
+                  background: "#dc2626",
+                  color: "white",
+                  borderRadius: "999px",
+                  fontSize: "0.65rem",
+                  fontWeight: 700,
+                  padding: "0.1rem 0.4rem",
+                  marginLeft: "0.35rem",
+                  lineHeight: 1,
+                  verticalAlign: "middle",
+                }}>
+                  {dueCount}
+                </span>
+              )}
+            </a>
             <a href="/cars" onClick={() => setMenuOpen(false)}>My Cars</a>
             <a href="/maintenance" onClick={() => setMenuOpen(false)}>History</a>
+            <a href="/reports" onClick={() => setMenuOpen(false)}>Reports</a>
             <a href="/settings" onClick={() => setMenuOpen(false)}>Settings</a>
             <a href="/profile" onClick={() => setMenuOpen(false)}>Profile</a>
             <Form method="post" action="/logout" style={{ display: "inline" }}>
@@ -90,7 +151,7 @@ function NavBar({ isLoggedIn }: { isLoggedIn: boolean }) {
 }
 
 export default function App() {
-  const { isLoggedIn } = useLoaderData<typeof loader>();
+  const { isLoggedIn, dueCount } = useLoaderData<typeof loader>();
 
   return (
     <html lang="en">
@@ -102,7 +163,7 @@ export default function App() {
         <style>{globalStyles}</style>
       </head>
       <body>
-        <NavBar isLoggedIn={isLoggedIn} />
+        <NavBar isLoggedIn={isLoggedIn} dueCount={dueCount} />
         <main className="container">
           <Outlet />
         </main>

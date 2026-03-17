@@ -9,6 +9,7 @@ interface MaintenanceRecord {
   cost?: number | null;
   vendor?: string | null;
   description?: string | null;
+  receiptUrl?: string | null;
 }
 
 interface MaintenanceListProps {
@@ -59,6 +60,17 @@ export default function MaintenanceList({ records, carId }: MaintenanceListProps
           </div>
           {record.description && (
             <div className="text-sm text-muted mt-1">{record.description}</div>
+          )}
+          {record.receiptUrl && (
+            <a
+              href={record.receiptUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-secondary btn-sm"
+              style={{ marginTop: "0.25rem" }}
+            >
+              📄 View Receipt
+            </a>
           )}
         </div>
       ))}

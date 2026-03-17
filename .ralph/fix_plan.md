@@ -108,7 +108,35 @@
 - [x] Cars list: Add fleet stats bar (cars count, service records, total spent) above search
 - [x] Maintenance forms: Client-side mileage warning when entered mileage < car current mileage - 1000
 
+## ✅ Completed - Phase 13: Loop 8 Performance, Features & UX
+
+- [x] Batch getMaintenanceDue: Added getBatchMaintenanceDue + getBatchMaintenanceApproaching (2 queries vs 2N per page load)
+- [x] Update dashboard loader to use batch versions (getBatchMaintenanceDue + getBatchMaintenanceApproaching in one Promise.all)
+- [x] Update cars list loader to use getBatchMaintenanceDue
+- [x] Global /maintenance history route: search/filter by car+type, sort all fields, summary stats, CSV-ready table
+- [x] Fleet-wide CSV export at /cars/export: all cars' records in one download with Car column
+- [x] Export All button on /cars page (conditional on having cars)
+- [x] Google Maps navigation links on NearbyServicesAlert: nearest shop linked in alert text + 📍 Map buttons in expandable list
+- [x] Dashboard and History links added to navbar
+- [x] + Log buttons on every service schedule card (car detail page)
+- [x] Owner/Driver role badge shown next to car title on car detail page
+- [x] dueTypes list shown on CarCard (⚠️ Due: Oil Change, Tire Rotation...)
+- [x] InstallPrompt dismissal persisted in localStorage (no re-appear on refresh)
+- [x] Confirm dialog before removing a car member
+- [x] Auto-sanitize maintenance type names to snake_case in settings create/update
+
+## 🔧 Phase 14: Loop 9 Tasks (In Progress)
+- [ ] Add Car imageUrl + notes fields to Prisma schema, forms, CarCard, and car detail
+- [ ] Add MaintenanceRecord receiptUrl field to Prisma schema, forms, and display
+- [ ] Create /reports route with year-over-year cost comparison and HTML bar chart
+- [ ] Add date range filter (from/to) on /maintenance history page
+- [ ] Add server-side pagination to /maintenance history (replace client-side)
+- [ ] Add navbar notification badge showing count of due maintenance items
+- [ ] Add Reports link to authenticated navbar
+- [ ] Add printable maintenance history report per car (print button + CSS)
+- [ ] Add global search route /search (across cars and records)
+- [ ] Add v3_singleFetch future flag with proper loader type migration
+
 ## 📋 Future Improvements
-- [ ] Add `v3_singleFetch` future flag (breaking change — requires loader return type migration)
 - [ ] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration
-- [ ] Add app icons in multiple sizes for better PWA compliance
+- [ ] Add push notification support for maintenance due reminders

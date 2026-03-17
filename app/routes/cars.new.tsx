@@ -24,6 +24,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const purchaseCostRaw = String(formData.get("purchaseCost") ?? "").trim();
   const vendor = String(formData.get("vendor") ?? "").trim() || null;
   const description = String(formData.get("description") ?? "").trim() || null;
+  const imageUrl = String(formData.get("imageUrl") ?? "").trim() || null;
+  const notes = String(formData.get("notes") ?? "").trim() || null;
+
+  if (imageUrl) {
+    try { new URL(imageUrl); } catch { return json({ error: "Image URL must be a valid URL" }, { status: 400 }); }
+  }
 
   const currentYear = new Date().getFullYear();
   if (!make) return json({ error: "Make is required" }, { status: 400 });
@@ -43,7 +49,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const purchaseCost = purchaseCostRaw ? parseFloat(purchaseCostRaw) : null;
 
   const car = await createCar(
-    { make, model, year, currentMileage, purchaseCost, vendor, description },
+    { make, model, year, currentMileage, purchaseCost, vendor, description, imageUrl, notes },
     userId
   );
 
@@ -98,8 +104,16 @@ export default function CarsNew() {
             </div>
           </div>
           <div className="form-group">
+            <label htmlFor="imageUrl">Image URL (optional)</label>
+            <input id="imageUrl" name="imageUrl" type="url" className="form-control" placeholder="https://example.com/my-car.jpg" />
+          </div>
+          <div className="form-group">
             <label htmlFor="description">Description</label>
             <textarea id="description" name="description" rows={3} className="form-control" placeholder="Additional notes..." />
+          </div>
+          <div className="form-group">
+            <label htmlFor="notes">Notes</label>
+            <textarea id="notes" name="notes" rows={3} className="form-control" placeholder="Additional notes about this car..." />
           </div>
           <div className="flex gap-sm">
             <button type="submit" className="btn btn-primary" disabled={isSubmitting}>{isSubmitting ? "Adding car..." : "Add Car"}</button>

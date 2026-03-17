@@ -170,7 +170,7 @@ export default function Index() {
           <h2>Your Cars</h2>
           <div className="grid">
             {carsWithDue.map(({ car, due, lastServiceDate, totalRecords }) => (
-              <CarCard key={car.id} car={car} dueCount={due.length} dueTypes={due.map(d => d.type)} lastServiceDate={lastServiceDate} totalRecords={totalRecords} />
+              <CarCard key={car.id} car={car} imageUrl={car.imageUrl} dueCount={due.length} dueTypes={due.map(d => d.type)} lastServiceDate={lastServiceDate} totalRecords={totalRecords} />
             ))}
           </div>
 

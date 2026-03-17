@@ -6,5 +6,5 @@
 cd "$(dirname "$0")/.."
 
 while :; do
-  cat .ralph/PROMPT.md | copilot --yolo --no-ask-user
+  cat .ralph/PROMPT.md | copilot --yolo --no-ask-user --model gpt-5-mini --reasoning-effort high
 done

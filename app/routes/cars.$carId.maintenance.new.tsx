@@ -32,6 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const costRaw = String(formData.get("cost") ?? "").trim();
   const vendor = String(formData.get("vendor") ?? "").trim() || null;
   const description = String(formData.get("description") ?? "").trim() || null;
+  const receiptUrl = String(formData.get("receiptUrl") ?? "").trim() || null;
 
   if (!type) return json({ error: "Maintenance type is required" }, { status: 400 });
   if (!dateStr) return json({ error: "Date is required" }, { status: 400 });
@@ -46,7 +47,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const cost = costRaw ? parseFloat(costRaw) : null;
 
-  await createMaintenanceRecord({ carId, type, date: dateObj, mileage, cost, vendor, description });
+  if (receiptUrl) {
+    try { new URL(receiptUrl); } catch { return json({ error: "Receipt URL must be a valid URL" }, { status: 400 }); }
+  }
+
+  await createMaintenanceRecord({ carId, type, date: dateObj, mileage, cost, vendor, description, receiptUrl });
   return redirect(`/cars/${carId}`);
 }
 
@@ -118,6 +123,10 @@ export default function NewMaintenance() {
           <div className="form-group">
             <label htmlFor="description">Notes</label>
             <textarea id="description" name="description" rows={3} className="form-control" />
+          </div>
+          <div className="form-group">
+            <label htmlFor="receiptUrl">Receipt URL (optional)</label>
+            <input id="receiptUrl" name="receiptUrl" type="url" className="form-control" placeholder="https://example.com/receipt.pdf" />
           </div>
           <div className="flex gap-sm">
             <button type="submit" className="btn btn-primary" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Record"}</button>

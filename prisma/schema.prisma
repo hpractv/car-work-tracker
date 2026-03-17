@@ -25,6 +25,8 @@ model Car {
   purchaseCost    Float?
   vendor          String?
   description     String?
+  imageUrl        String?
+  notes           String?
   createdAt       DateTime            @default(now())
   members         CarMember[]
   maintenanceRecords MaintenanceRecord[]
@@ -49,6 +51,7 @@ model MaintenanceRecord {
   cost        Float?
   vendor      String?
   description String?
+  receiptUrl  String?
   createdAt   DateTime @default(now())
   car         Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
 }

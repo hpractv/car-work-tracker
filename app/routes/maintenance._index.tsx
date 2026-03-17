@@ -1,110 +1,186 @@
-import { useState, useMemo } from "react";
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, Link, useRouteError, isRouteErrorResponse } from "@remix-run/react";
+﻿import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { useLoaderData, Link, useRouteError, isRouteErrorResponse, Form, useSearchParams } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { getCarsForUser } from "~/models/car.server";
 import { db } from "~/db.server";
 import { formatMaintenanceType, formatDate, formatCurrency, formatMileage } from "~/utils/format";
+
+const PAGE_SIZE = 25;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const cars = await getCarsForUser(userId);
   const carIds = cars.map((c) => c.id);
 
+  const url = new URL(request.url);
+  const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
+  const selectedCarId = url.searchParams.get("carId") ?? "";
+  const typeFilter = url.searchParams.get("type") ?? "";
+  const sortField = url.searchParams.get("sortField") ?? "date";
+  const sortDir = (url.searchParams.get("sortDir") ?? "desc") as "asc" | "desc";
+  const dateFrom = url.searchParams.get("dateFrom") ?? "";
+  const dateTo = url.searchParams.get("dateTo") ?? "";
+  const search = url.searchParams.get("search") ?? "";
+
   if (carIds.length === 0) {
-    return json({ records: [], cars, totalCost: 0 });
+    return json({
+      records: [],
+      cars,
+      uniqueTypes: [] as string[],
+      totalCost: 0,
+      totalCount: 0,
+      page: 1,
+      pageSize: PAGE_SIZE,
+      totalPages: 0,
+      sortField,
+      sortDir,
+      selectedCarId,
+      typeFilter,
+      dateFrom,
+      dateTo,
+      search,
+    });
   }
 
-  const records = await db.maintenanceRecord.findMany({
+  // Fetch all distinct types for the filter dropdown (unaffected by current filters)
+  const typeRows = await db.maintenanceRecord.findMany({
     where: { carId: { in: carIds } },
-    orderBy: { date: "desc" },
+    select: { type: true },
+    distinct: ["type"],
+    orderBy: { type: "asc" },
+  });
+  const uniqueTypes = typeRows.map((r) => r.type);
+
+  // Build Prisma where clause
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const where: any = selectedCarId
+    ? { carId: selectedCarId }
+    : { carId: { in: carIds } };
+
+  if (typeFilter) {
+    where.type = { contains: typeFilter };
+  }
+
+  if (dateFrom || dateTo) {
+    const dateCondition: { gte?: Date; lte?: Date } = {};
+    if (dateFrom) {
+      const d = new Date(dateFrom);
+      if (!isNaN(d.getTime())) dateCondition.gte = d;
+    }
+    if (dateTo) {
+      const d = new Date(dateTo);
+      if (!isNaN(d.getTime())) {
+        d.setHours(23, 59, 59, 999);
+        dateCondition.lte = d;
+      }
+    }
+    if (Object.keys(dateCondition).length > 0) {
+      where.date = dateCondition;
+    }
+  }
+
+  if (search.trim()) {
+    where.OR = [
+      { type: { contains: search } },
+      { vendor: { contains: search } },
+      { description: { contains: search } },
+    ];
+  }
+
+  // Restrict sortField to direct columns (car-name sort would require client-side join)
+  const validSortFields = ["date", "type", "mileage", "cost"];
+  const orderByField = validSortFields.includes(sortField) ? sortField : "date";
+  const orderBy = { [orderByField]: sortDir };
+
+  const totalCount = await db.maintenanceRecord.count({ where });
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+
+  const records = await db.maintenanceRecord.findMany({
+    where,
+    orderBy,
+    skip: (currentPage - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
     include: {
       car: { select: { id: true, make: true, model: true, year: true } },
     },
   });
 
+  // totalCost aggregates ALL matching records (not just the current page)
   const costAgg = await db.maintenanceRecord.aggregate({
-    where: { carId: { in: carIds }, cost: { not: null } },
+    where: { ...where, cost: { not: null } },
     _sum: { cost: true },
   });
   const totalCost = costAgg._sum.cost ?? 0;
 
-  return json({ records, cars, totalCost });
-}
-
-type SortField = "date" | "type" | "cost" | "mileage" | "car";
-type SortDir = "asc" | "desc";
-
-function sortRecords(
-  records: ReturnType<typeof useLoaderData<typeof loader>>["records"],
-  field: SortField,
-  dir: SortDir
-) {
-  return [...records].sort((a, b) => {
-    let cmp = 0;
-    if (field === "date") cmp = new Date(a.date).getTime() - new Date(b.date).getTime();
-    else if (field === "type") cmp = a.type.localeCompare(b.type);
-    else if (field === "cost") cmp = (a.cost ?? 0) - (b.cost ?? 0);
-    else if (field === "mileage") cmp = a.mileage - b.mileage;
-    else if (field === "car") {
-      const aLabel = `${a.car.year} ${a.car.make} ${a.car.model}`;
-      const bLabel = `${b.car.year} ${b.car.make} ${b.car.model}`;
-      cmp = aLabel.localeCompare(bLabel);
-    }
-    return dir === "asc" ? cmp : -cmp;
+  return json({
+    records,
+    cars,
+    uniqueTypes,
+    totalCost,
+    totalCount,
+    page: currentPage,
+    pageSize: PAGE_SIZE,
+    totalPages,
+    sortField: orderByField,
+    sortDir,
+    selectedCarId,
+    typeFilter,
+    dateFrom,
+    dateTo,
+    search,
   });
 }
 
 export default function MaintenanceIndex() {
-  const { records, cars, totalCost } = useLoaderData<typeof loader>();
+  const {
+    records,
+    cars,
+    uniqueTypes,
+    totalCost,
+    totalCount,
+    page,
+    totalPages,
+    sortField,
+    sortDir,
+    selectedCarId,
+    typeFilter,
+    dateFrom,
+    dateTo,
+    search,
+  } = useLoaderData<typeof loader>();
 
-  const [search, setSearch] = useState("");
-  const [filterCar, setFilterCar] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const [sortField, setSortField] = useState<SortField>("date");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [searchParams] = useSearchParams();
 
-  const uniqueTypes = useMemo(
-    () => [...new Set(records.map((r) => r.type))].sort(),
-    [records]
-  );
+  const hasFilters = !!(selectedCarId || typeFilter || dateFrom || dateTo || search);
 
-  const filtered = useMemo(() => {
-    let result = records;
-    if (filterCar) result = result.filter((r) => r.car.id === filterCar);
-    if (filterType) result = result.filter((r) => r.type === filterType);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (r) =>
-          formatMaintenanceType(r.type).toLowerCase().includes(q) ||
-          r.car.make.toLowerCase().includes(q) ||
-          r.car.model.toLowerCase().includes(q) ||
-          String(r.car.year).includes(q) ||
-          (r.vendor ?? "").toLowerCase().includes(q) ||
-          (r.description ?? "").toLowerCase().includes(q)
-      );
-    }
-    return sortRecords(result, sortField, sortDir);
-  }, [records, filterCar, filterType, search, sortField, sortDir]);
-
-  function toggleSort(field: SortField) {
-    if (sortField === field) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDir("desc");
-    }
+  function buildPageUrl(p: number) {
+    const params = new URLSearchParams(searchParams);
+    params.set("page", String(p));
+    return `?${params.toString()}`;
   }
 
-  const sortIcon = (field: SortField) => {
-    if (sortField !== field) return " ↕";
-    return sortDir === "asc" ? " ↑" : " ↓";
-  };
+  function buildSortUrl(field: string) {
+    const params = new URLSearchParams(searchParams);
+    const nextDir = sortField === field && sortDir === "desc" ? "asc" : "desc";
+    params.set("sortField", field);
+    params.set("sortDir", nextDir);
+    params.set("page", "1");
+    return `?${params.toString()}`;
+  }
 
-  const filteredCost = filtered
-    .filter((r) => r.cost != null)
-    .reduce((s, r) => s + (r.cost ?? 0), 0);
+  function sortIcon(field: string) {
+    if (sortField !== field) return " \u2195";
+    return sortDir === "asc" ? " \u2191" : " \u2193";
+  }
+
+  const sortLinkStyle: React.CSSProperties = {
+    fontWeight: 600,
+    fontSize: "0.85rem",
+    color: "#64748b",
+    textDecoration: "none",
+    whiteSpace: "nowrap",
+  };
 
   return (
     <div>
@@ -113,10 +189,10 @@ export default function MaintenanceIndex() {
           <h1>Maintenance History</h1>
           <p className="text-muted">All service records across your fleet</p>
         </div>
-        <Link to="/" className="btn btn-secondary">← Dashboard</Link>
+        <Link to="/" className="btn btn-secondary">&larr; Dashboard</Link>
       </div>
 
-      {records.length === 0 ? (
+      {totalCount === 0 && !hasFilters ? (
         <div className="card" style={{ textAlign: "center", padding: "2rem" }}>
           <p className="text-muted">No maintenance records yet.</p>
           {cars.length === 0 ? (
@@ -132,9 +208,9 @@ export default function MaintenanceIndex() {
           {/* Summary stats */}
           <div className="card" style={{ display: "flex", gap: "2rem", padding: "1rem 1.5rem", marginBottom: "1rem", background: "#f8fafc", flexWrap: "wrap" }}>
             <div>
-              <strong>{records.length}</strong>
+              <strong>{totalCount}</strong>
               <span className="text-muted text-sm" style={{ marginLeft: "0.35rem" }}>
-                record{records.length !== 1 ? "s" : ""}
+                record{totalCount !== 1 ? "s" : ""}{hasFilters ? " matched" : ""}
               </span>
             </div>
             {totalCost > 0 && (
@@ -149,30 +225,24 @@ export default function MaintenanceIndex() {
                 car{cars.length !== 1 ? "s" : ""}
               </span>
             </div>
+            {totalPages > 1 && (
+              <div>
+                <span className="text-muted text-sm">Page {page} of {totalPages}</span>
+              </div>
+            )}
           </div>
 
-          {/* Filter controls */}
+          {/* Filter form — GET so filters appear in the URL */}
           <div className="card" style={{ marginBottom: "1rem" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem" }}>
-              <div className="form-group">
-                <label>Search</label>
-                <input
-                  type="search"
-                  placeholder="Type, car, vendor, notes..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="form-control"
-                  aria-label="Search maintenance records"
-                />
-              </div>
+            <Form method="get" style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "flex-end" }}>
+              {/* Preserve sort state so submitting the filter form doesn't reset sort */}
+              <input type="hidden" name="sortField" value={sortField} />
+              <input type="hidden" name="sortDir" value={sortDir} />
+
               {cars.length > 1 && (
-                <div className="form-group">
-                  <label>Car</label>
-                  <select
-                    value={filterCar}
-                    onChange={(e) => setFilterCar(e.target.value)}
-                    className="form-control"
-                  >
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label style={{ display: "block", fontSize: "0.85rem", color: "#64748b", marginBottom: "0.25rem" }}>Car</label>
+                  <select name="carId" defaultValue={selectedCarId} className="form-control">
                     <option value="">All cars</option>
                     {cars.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -182,41 +252,59 @@ export default function MaintenanceIndex() {
                   </select>
                 </div>
               )}
+
               {uniqueTypes.length > 1 && (
-                <div className="form-group">
-                  <label>Service Type</label>
-                  <select
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                    className="form-control"
-                  >
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label style={{ display: "block", fontSize: "0.85rem", color: "#64748b", marginBottom: "0.25rem" }}>Service Type</label>
+                  <select name="type" defaultValue={typeFilter} className="form-control">
                     <option value="">All types</option>
-                    {uniqueTypes.map((t) => (
+                    {uniqueTypes.map((t: string) => (
                       <option key={t} value={t}>{formatMaintenanceType(t)}</option>
                     ))}
                   </select>
                 </div>
               )}
-            </div>
-            {(search || filterCar || filterType) && (
-              <div style={{ marginTop: "0.5rem", display: "flex", gap: "0.5rem", alignItems: "center" }}>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ display: "block", fontSize: "0.85rem", color: "#64748b", marginBottom: "0.25rem" }}>From Date</label>
+                <input type="date" name="dateFrom" defaultValue={dateFrom} className="form-control" style={{ width: "150px" }} />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ display: "block", fontSize: "0.85rem", color: "#64748b", marginBottom: "0.25rem" }}>To Date</label>
+                <input type="date" name="dateTo" defaultValue={dateTo} className="form-control" style={{ width: "150px" }} />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ display: "block", fontSize: "0.85rem", color: "#64748b", marginBottom: "0.25rem" }}>Search</label>
+                <input type="text" name="search" defaultValue={search} placeholder="vendor, type, notes..." className="form-control" style={{ width: "200px" }} />
+              </div>
+
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-end", paddingBottom: "0.05rem" }}>
+                <button type="submit" className="btn btn-primary btn-sm">Apply</button>
+                {hasFilters && (
+                  <a href="?" className="btn btn-secondary btn-sm">&times; Clear</a>
+                )}
+              </div>
+            </Form>
+
+            {hasFilters && (
+              <div style={{ marginTop: "0.5rem" }}>
                 <span className="text-sm text-muted">
-                  Showing {filtered.length} of {records.length} records
-                  {filteredCost > 0 ? ` · ${formatCurrency(filteredCost)}` : ""}
+                  {totalCount} record{totalCount !== 1 ? "s" : ""} matched
+                  {totalCost > 0 ? ` \u00b7 ${formatCurrency(totalCost)} total` : ""}
                 </span>
-                <button
-                  onClick={() => { setSearch(""); setFilterCar(""); setFilterType(""); }}
-                  className="btn btn-secondary btn-sm"
-                >
-                  × Clear filters
-                </button>
               </div>
             )}
           </div>
 
-          {filtered.length === 0 ? (
+          {records.length === 0 ? (
             <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
               <p className="text-muted">No records match your filters.</p>
+              <p className="text-sm text-muted" style={{ marginTop: "0.5rem" }}>
+                Try adjusting the date range, search term, or selecting a different car or service type.
+              </p>
+              <a href="?" className="btn btn-secondary btn-sm" style={{ marginTop: "0.75rem" }}>Clear all filters</a>
             </div>
           ) : (
             <div className="card" style={{ padding: 0, overflow: "hidden" }}>
@@ -225,46 +313,27 @@ export default function MaintenanceIndex() {
                   <thead>
                     <tr>
                       <th>
-                        <button
-                          onClick={() => toggleSort("date")}
-                          style={{ background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem", color: "#64748b", padding: 0 }}
-                        >
+                        <a href={buildSortUrl("date")} style={sortLinkStyle}>
                           Date{sortIcon("date")}
-                        </button>
+                        </a>
                       </th>
                       {cars.length > 1 && (
-                        <th>
-                          <button
-                            onClick={() => toggleSort("car")}
-                            style={{ background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem", color: "#64748b", padding: 0 }}
-                          >
-                            Car{sortIcon("car")}
-                          </button>
-                        </th>
+                        <th style={{ fontSize: "0.85rem", color: "#64748b" }}>Car</th>
                       )}
                       <th>
-                        <button
-                          onClick={() => toggleSort("type")}
-                          style={{ background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem", color: "#64748b", padding: 0 }}
-                        >
+                        <a href={buildSortUrl("type")} style={sortLinkStyle}>
                           Service Type{sortIcon("type")}
-                        </button>
+                        </a>
                       </th>
                       <th>
-                        <button
-                          onClick={() => toggleSort("mileage")}
-                          style={{ background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem", color: "#64748b", padding: 0 }}
-                        >
+                        <a href={buildSortUrl("mileage")} style={sortLinkStyle}>
                           Mileage{sortIcon("mileage")}
-                        </button>
+                        </a>
                       </th>
                       <th>
-                        <button
-                          onClick={() => toggleSort("cost")}
-                          style={{ background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem", color: "#64748b", padding: 0 }}
-                        >
+                        <a href={buildSortUrl("cost")} style={sortLinkStyle}>
                           Cost{sortIcon("cost")}
-                        </button>
+                        </a>
                       </th>
                       <th>Vendor</th>
                       <th>Notes</th>
@@ -272,7 +341,7 @@ export default function MaintenanceIndex() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((record) => (
+                    {records.map((record) => (
                       <tr key={record.id}>
                         <td style={{ whiteSpace: "nowrap" }}>{formatDate(record.date)}</td>
                         {cars.length > 1 && (
@@ -285,11 +354,11 @@ export default function MaintenanceIndex() {
                         <td>{formatMaintenanceType(record.type)}</td>
                         <td style={{ whiteSpace: "nowrap" }}>{formatMileage(record.mileage)}</td>
                         <td style={{ whiteSpace: "nowrap" }}>
-                          {record.cost != null ? formatCurrency(record.cost) : "—"}
+                          {record.cost != null ? formatCurrency(record.cost) : "\u2014"}
                         </td>
-                        <td>{record.vendor ?? "—"}</td>
+                        <td>{record.vendor ?? "\u2014"}</td>
                         <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {record.description ?? "—"}
+                          {record.description ?? "\u2014"}
                         </td>
                         <td style={{ whiteSpace: "nowrap" }}>
                           <div className="flex gap-sm">
@@ -314,6 +383,19 @@ export default function MaintenanceIndex() {
               </div>
             </div>
           )}
+
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem", marginTop: "1rem" }}>
+              {page > 1 && (
+                <a href={buildPageUrl(page - 1)} className="btn btn-secondary btn-sm">&larr; Prev</a>
+              )}
+              <span className="text-muted text-sm">Page {page} of {totalPages} ({totalCount} records)</span>
+              {page < totalPages && (
+                <a href={buildPageUrl(page + 1)} className="btn btn-primary btn-sm">Next &rarr;</a>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>
@@ -326,7 +408,7 @@ export function ErrorBoundary() {
     <div className="card" style={{ borderLeft: "4px solid #dc2626", maxWidth: "600px" }}>
       <h2>Something went wrong</h2>
       {isRouteErrorResponse(error) ? (
-        <p className="text-muted">{error.status} — {error.statusText || "Error"}</p>
+        <p className="text-muted">{error.status} &mdash; {error.statusText || "Error"}</p>
       ) : error instanceof Error ? (
         <p className="text-muted">{error.message}</p>
       ) : (

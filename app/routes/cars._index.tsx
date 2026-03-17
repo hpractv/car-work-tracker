@@ -141,7 +141,7 @@ export default function CarsIndex() {
           ) : (
             <div className="grid">
               {filteredCars.map(({ car, dueCount, dueTypes, lastServiceDate, totalRecords }) => (
-                <CarCard key={car.id} car={car} dueCount={dueCount} dueTypes={dueTypes} lastServiceDate={lastServiceDate} totalRecords={totalRecords} />
+                <CarCard key={car.id} car={car} imageUrl={car.imageUrl} dueCount={dueCount} dueTypes={dueTypes} lastServiceDate={lastServiceDate} totalRecords={totalRecords} />
               ))}
             </div>
           )}

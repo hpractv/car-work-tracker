@@ -150,3 +150,30 @@ Tasks Completed: ✅ All 8
 Build result: npm run build ✅ exit code 0 — 125 client modules + 33 SSR modules + PWA service worker (31 precached entries)
 TypeCheck: npm run typecheck ✅ exit code 0
 Git: Committed and tagged.
+---
+[2026-03-17] Loop 8
+
+Tasks Attempted:
+- Batch getMaintenanceDue/getMaintenanceApproaching performance optimization
+- Global /maintenance history route
+- Fleet-wide /cars/export CSV download
+- Google Maps navigation links in NearbyServicesAlert
+- Dashboard + History links in navbar
+- + Log buttons on all service schedule cards (car detail)
+- Owner/Driver role badge on car detail page
+- dueTypes list on CarCard
+- InstallPrompt dismissal persisted in localStorage
+- Confirm dialog before removing a car member
+- Auto-sanitize maintenance type names to snake_case in settings
+
+Tasks Completed: ✅ All 10 items (some covering multiple sub-tasks)
+
+Build result: npm run build ✅ exit code 0 — 129 client modules + 35 SSR modules + PWA service worker (33 precached entries)
+TypeCheck: npm run typecheck ✅ exit code 0
+Git: Committed (12 files changed, 720 insertions, 57 deletions). Tagged: 0.0.8. No remote configured, push skipped.
+
+Notable findings:
+- Batch query optimization reduces dashboard/cars-list DB queries from 2N to 2 for due/approaching maintenance checks
+- Global /maintenance route adds cross-fleet visibility with filter/sort/search
+- Cars.export.tsx adds fleet-wide CSV; separate from per-car export
+- All service schedule cards now have inline + Log buttons for quick service logging

@@ -201,3 +201,18 @@ try {
   throw e; // re-throw unexpected errors
 }
 ```
+## Batch Prisma Queries for Maintenance Due Calculations
+
+The `getMaintenanceDue(carId, mileage)` function does 2 DB queries per car. When the dashboard loads for a user with N cars, this creates 2N queries just for due-maintenance checks (plus another 2N for approaching). Fix: add `getBatchMaintenanceDue(cars)` that loads all types once and all records for all carIds in one query, then computes results in-memory per car. Reduces from 2N queries to 2 queries. Apply the same pattern to `getBatchMaintenanceApproaching`. Both use a `Map<carId, results[]>` return type for O(1) lookup per car.
+
+## Persisting UI State in localStorage for PWA
+
+When a user dismisses a PWA install prompt, the dismissal should survive page reloads. Use `localStorage.setItem(KEY, "1")` on dismiss and read it back in a `useEffect` on mount. Initialize the `dismissed` state to `true` (not `false`) to avoid a flash of the prompt on first render before localStorage is read. Only set it to `false` after confirming the key is absent.
+
+## Global History Routes in Remix
+
+A global `/maintenance` route that shows all records across all user cars is valuable for fleet management. Load with `db.maintenanceRecord.findMany({ where: { carId: { in: carIds } }, include: { car: { select: ... } } })`. Client-side filter/sort works well for typical fleet sizes (< 1000 records). For larger datasets, consider server-side pagination via URL searchParams.
+
+## Auto-Sanitizing User Input for Technical Field Names
+
+When a field (like maintenance type name) is used as a technical identifier (stored as `oil_change`, used in URL params), auto-sanitize on the server: `rawName.toLowerCase().replace(/[\s-]+/g, "_").replace(/[^a-z0-9_]/g, "")`. This lets users type "Oil Change" naturally while storing the canonical form. Always validate the sanitized result is non-empty.

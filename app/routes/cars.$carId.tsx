@@ -200,6 +200,14 @@ export default function CarDetail() {
         {/* Car Details */}
         <div className="card">
           <h2>Car Details</h2>
+          {car.imageUrl && (
+            <img
+              src={car.imageUrl}
+              alt={`${car.year} ${car.make} ${car.model}`}
+              style={{ width: "100%", maxHeight: "250px", objectFit: "cover", borderRadius: "6px", marginBottom: "1rem" }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+          )}
           <table>
             <tbody>
               <tr><th>Make</th><td>{car.make}</td></tr>
@@ -225,6 +233,12 @@ export default function CarDetail() {
               )}
             </tbody>
           </table>
+          {car.notes && (
+            <div className="mt-2">
+              <strong>Notes:</strong>
+              <p className="text-muted" style={{ whiteSpace: "pre-wrap", marginTop: "0.25rem" }}>{car.notes}</p>
+            </div>
+          )}
           {/* Quick Mileage Update */}
           <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #e2e8f0" }}>
             <p className="text-sm" style={{ fontWeight: 500, marginBottom: "0.5rem" }}>Update Mileage</p>
@@ -306,6 +320,9 @@ export default function CarDetail() {
             <h2 style={{ margin: 0 }}>Service Schedule</h2>
             <a href={`/cars/${car.id}/maintenance/export`} className="btn btn-secondary btn-sm">
               ⬇ Export CSV
+            </a>
+            <a href={`/cars/${car.id}/print`} className="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">
+              🖨️ Print Report
             </a>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "0.75rem" }}>

@@ -10,13 +10,14 @@ interface CarCardProps {
     currentMileage: number;
     vendor?: string | null;
   };
+  imageUrl?: string | null;
   dueCount?: number;
   dueTypes?: string[];
   lastServiceDate?: string | null;
   totalRecords?: number;
 }
 
-export default function CarCard({ car, dueCount, dueTypes, lastServiceDate, totalRecords }: CarCardProps) {
+export default function CarCard({ car, imageUrl, dueCount, dueTypes, lastServiceDate, totalRecords }: CarCardProps) {
   return (
     <div className="card" style={{ position: "relative" }}>
       {dueCount != null && dueCount > 0 && (
@@ -36,6 +37,14 @@ export default function CarCard({ car, dueCount, dueTypes, lastServiceDate, tota
         >
           {dueCount} due
         </span>
+      )}
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          alt={`${car.year} ${car.make} ${car.model}`}
+          style={{ width: "100%", height: "140px", objectFit: "cover", borderRadius: "6px 6px 0 0", marginBottom: "0.75rem", display: "block" }}
+          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+        />
       )}
       <h3>
         {car.year} {car.make} {car.model}

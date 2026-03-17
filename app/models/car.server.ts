@@ -34,9 +34,11 @@ export async function createCar(
     purchaseCost?: number | null;
     vendor?: string | null;
     description?: string | null;
+    imageUrl?: string | null;
+    notes?: string | null;
   },
   userId: string
-) {
+){
   return db.car.create({
     data: {
       ...data,
@@ -57,9 +59,11 @@ export async function updateCar(
     purchaseCost?: number | null;
     vendor?: string | null;
     description?: string | null;
+    imageUrl?: string | null;
+    notes?: string | null;
   },
   userId: string
-) {
+){
   const membership = await db.carMember.findFirst({
     where: { carId, userId, role: "owner" },
   });
