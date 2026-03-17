@@ -128,3 +128,32 @@ For maintenance due UI, compute `overallPercent = Math.max(mileagePercent, timeP
 ## Quick Mileage Update Pattern
 
 To allow inline mileage updates without navigating to edit page, add a small `<Form method="post">` inside the car detail card with `intent=updateMileage`. Handle it in the route `action` function. Using `redirect(\`/cars/${carId}\`)` after success ensures the page re-renders with fresh data including recalculated interval progress.
+
+## Removing Aggressive "No Record Found" Due Alerts
+
+The original due logic marked ALL maintenance types as due for any car that had at least ONE service record but was missing a specific type. This caused e.g. a car with only one oil change to show 10 "no record found" alerts. The spec pseudocode (`if lastRecord.mileage + interval < currentMileage`) implies no alert when there's no lastRecord. Fix: simply `continue` when `!lastRecord` instead of pushing a "No record found" item.
+
+## getMaintenanceApproaching for Proactive UX
+
+Rather than only alerting when maintenance is 100% due, a separate `getMaintenanceApproaching` function filters service interval status to items at 60-99% of their interval. This gives users a heads-up before items become due. The function reuses `getServiceIntervalStatus` logic to avoid duplicating the Prisma queries.
+
+## Pre-filling Form Selects from URL Params in Remix
+
+To pre-fill a `<select>` from a URL query param, read it in the loader:
+```ts
+const defaultType = new URL(request.url).searchParams.get("type") ?? "";
+return json({ ..., defaultType });
+```
+Then in the component, use `defaultValue={defaultType}` on the uncontrolled `<select>`. React will select the matching option on initial render. This enables "Log Service" links like `/cars/:id/maintenance/new?type=oil_change` to pre-fill the dropdown.
+
+## Client-side Pagination with useEffect Reset
+
+For client-side pagination with filter/sort, use `useState` for `currentPage` and a `useEffect` to reset to page 1 when any filter or sort parameter changes:
+```ts
+useEffect(() => { setCurrentPage(1); }, [filterType, sortField, sortDir]);
+```
+Slice the sorted array: `sortedRecords.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)`. This avoids the complexity of server-side pagination for small-to-medium datasets.
+
+## NearbyServicesAlert Inline Div vs AlertBanner for Expandable Lists
+
+When a banner needs interactive content (like an expandable list of services), it's better to use an inline `<div className="alert alert-warning">` directly rather than the `AlertBanner` component. The `AlertBanner` component renders a flat message string, which prevents adding buttons, lists, or other interactive elements inside the banner.

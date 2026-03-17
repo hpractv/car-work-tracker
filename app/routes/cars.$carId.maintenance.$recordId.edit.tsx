@@ -82,7 +82,18 @@ export default function EditMaintenance() {
       )}
 
       <div className="card">
-        <Form method="post">
+        <Form
+          method="post"
+          onSubmit={(e) => {
+            const mileageInput = e.currentTarget.elements.namedItem("mileage") as HTMLInputElement;
+            const enteredMileage = parseInt(mileageInput.value);
+            if (!isNaN(enteredMileage) && enteredMileage < car.currentMileage - 1000) {
+              if (!window.confirm(`The entered mileage (${enteredMileage.toLocaleString()}) is significantly lower than the car's current mileage (${car.currentMileage.toLocaleString()}). Continue anyway?`)) {
+                e.preventDefault();
+              }
+            }
+          }}
+        >
           <div className="form-group">
             <label htmlFor="type">Maintenance Type *</label>
             <select id="type" name="type" required defaultValue={record.type} className="form-control">

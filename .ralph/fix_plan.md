@@ -83,9 +83,22 @@
 - [x] Add Settings page (/settings): displays all maintenance types and their service intervals
 - [x] Add Settings link to navbar in root.tsx
 
+## ✅ Completed - Phase 11: Loop 6 Improvements
+- [x] Fix due logic: remove "no record found" — only flag when interval genuinely exceeded (spec-compliant)
+- [x] Add getMaintenanceApproaching() — returns types at 60–99% of service interval for proactive alerts
+- [x] Settings page: full CRUD for maintenance types (create, inline edit, delete with confirm guard)
+- [x] Quick "Log Service" buttons on all due maintenance items in dashboard and car detail
+- [x] Dashboard: Upcoming Maintenance section with progress bars for approaching items
+- [x] Car detail: client-side pagination (10/page) for maintenance history
+- [x] Car detail: Monthly Spending last-12-months inline bar chart
+- [x] Car detail: Due maintenance replaced with actionable card (per-item Log Service links)
+- [x] NearbyServicesAlert: expandable list of up to 5 nearby shops with distance toggle
+- [x] Add /offline route — PWA offline page with Try Again button
+- [x] vite.config.ts: navigateFallback=/offline for service worker offline routing
+- [x] CSV export: ISO date format (YYYY-MM-DD)
+- [x] Maintenance new form: pre-selects type from ?type= URL query param
+
 ## 📋 Future Improvements
 - [ ] Add `v3_singleFetch` future flag (breaking change — requires loader return type migration)
 - [ ] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration
 - [ ] Add app icons in multiple sizes for better PWA compliance
-- [ ] Allow users to customize maintenance type intervals (currently read-only settings page)
-- [ ] Add pagination for cars with many maintenance records

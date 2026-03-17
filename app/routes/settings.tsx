@@ -1,6 +1,7 @@
 import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useActionData, useNavigation, Link, Form } from "@remix-run/react";
 import { useState } from "react";
+import { Prisma } from "@prisma/client";
 import { requireUserId } from "~/session.server";
 import {
   getMaintenanceTypes,
@@ -9,6 +10,21 @@ import {
   deleteMaintenanceType,
 } from "~/models/maintenance.server";
 import { formatMaintenanceType } from "~/utils/format";
+import { db } from "~/db.server";
+
+const DEFAULT_TYPES = [
+  { name: "oil_change", defaultIntervalMiles: 5000, defaultIntervalMonths: 6 },
+  { name: "tire_rotation", defaultIntervalMiles: 7500, defaultIntervalMonths: 12 },
+  { name: "brake_service", defaultIntervalMiles: 25000, defaultIntervalMonths: 24 },
+  { name: "air_filter", defaultIntervalMiles: 15000, defaultIntervalMonths: 12 },
+  { name: "cabin_filter", defaultIntervalMiles: 15000, defaultIntervalMonths: 12 },
+  { name: "spark_plugs", defaultIntervalMiles: 30000, defaultIntervalMonths: 36 },
+  { name: "transmission_service", defaultIntervalMiles: 60000, defaultIntervalMonths: 60 },
+  { name: "coolant_flush", defaultIntervalMiles: 50000, defaultIntervalMonths: 60 },
+  { name: "fuel_filter", defaultIntervalMiles: 30000, defaultIntervalMonths: 24 },
+  { name: "wiper_blades", defaultIntervalMiles: null, defaultIntervalMonths: 12 },
+  { name: "battery_check", defaultIntervalMiles: null, defaultIntervalMonths: 12 },
+];
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserId(request);
@@ -28,7 +44,14 @@ export async function action({ request }: ActionFunctionArgs) {
     const monthsRaw = formData.get("months") as string | null;
     const defaultIntervalMiles = milesRaw ? parseInt(milesRaw, 10) || null : null;
     const defaultIntervalMonths = monthsRaw ? parseInt(monthsRaw, 10) || null : null;
-    await createMaintenanceType({ name, defaultIntervalMiles, defaultIntervalMonths });
+    try {
+      await createMaintenanceType({ name, defaultIntervalMiles, defaultIntervalMonths });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        return json({ error: `A maintenance type named "${name}" already exists` }, { status: 409 });
+      }
+      throw e;
+    }
     return redirect("/settings");
   }
 
@@ -47,6 +70,17 @@ export async function action({ request }: ActionFunctionArgs) {
   if (intent === "delete") {
     const id = formData.get("id") as string;
     await deleteMaintenanceType(id);
+    return redirect("/settings");
+  }
+
+  if (intent === "restoreDefaults") {
+    for (const type of DEFAULT_TYPES) {
+      await db.maintenanceType.upsert({
+        where: { name: type.name },
+        update: { defaultIntervalMiles: type.defaultIntervalMiles, defaultIntervalMonths: type.defaultIntervalMonths },
+        create: type,
+      });
+    }
     return redirect("/settings");
   }
 
@@ -203,6 +237,26 @@ export default function Settings() {
           </div>
           <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
             Add
+          </button>
+        </Form>
+      </div>
+
+      <div className="card" style={{ marginTop: "1.5rem" }}>
+        <h2 style={{ marginTop: 0 }}>Restore Defaults</h2>
+        <p className="text-muted" style={{ marginBottom: "1rem" }}>
+          <strong>Warning:</strong> This will restore all 11 default maintenance types, updating their intervals if they already exist.
+        </p>
+        <Form
+          method="post"
+          onSubmit={(e) => {
+            if (!window.confirm("Restore all default maintenance types? Existing defaults will have their intervals reset.")) {
+              e.preventDefault();
+            }
+          }}
+        >
+          <input type="hidden" name="intent" value="restoreDefaults" />
+          <button type="submit" className="btn btn-secondary" disabled={isSubmitting}>
+            Restore Defaults
           </button>
         </Form>
       </div>

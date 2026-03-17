@@ -15,10 +15,46 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const user = await getUserById(userId);
   const cars = await getCarsForUser(userId);
 
+  const carIds = cars.map((c) => c.id);
+
+  const [lastRecordsRaw, countGroupsRaw] = await Promise.all([
+    carIds.length > 0
+      ? db.maintenanceRecord.findMany({
+          where: { carId: { in: carIds } },
+          orderBy: { date: "desc" },
+          select: { carId: true, date: true },
+        })
+      : Promise.resolve([]),
+    carIds.length > 0
+      ? db.maintenanceRecord.groupBy({
+          by: ["carId"],
+          where: { carId: { in: carIds } },
+          _count: { id: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const lastRecordsByCarId = new Map<string, string>();
+  for (const record of lastRecordsRaw) {
+    if (!lastRecordsByCarId.has(record.carId)) {
+      lastRecordsByCarId.set(record.carId, record.date.toISOString());
+    }
+  }
+
+  const recordCountsByCarId = new Map<string, number>();
+  for (const group of countGroupsRaw) {
+    recordCountsByCarId.set(group.carId, group._count.id);
+  }
+
   const carsWithDue = await Promise.all(
     cars.map(async (car) => {
       const due = await getMaintenanceDue(car.id, car.currentMileage);
-      return { car, due };
+      return {
+        car,
+        due,
+        lastServiceDate: lastRecordsByCarId.get(car.id) ?? null,
+        totalRecords: recordCountsByCarId.get(car.id) ?? 0,
+      };
     })
   );
 
@@ -135,8 +171,8 @@ export default function Index() {
 
           <h2>Your Cars</h2>
           <div className="grid">
-            {carsWithDue.map(({ car, due }) => (
-              <CarCard key={car.id} car={car} dueCount={due.length} />
+            {carsWithDue.map(({ car, due, lastServiceDate, totalRecords }) => (
+              <CarCard key={car.id} car={car} dueCount={due.length} lastServiceDate={lastServiceDate} totalRecords={totalRecords} />
             ))}
           </div>
 

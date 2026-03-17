@@ -6,34 +6,71 @@ import { getCarsForUser } from "~/models/car.server";
 import { getMaintenanceDue } from "~/models/maintenance.server";
 import { db } from "~/db.server";
 import CarCard from "~/components/CarCard";
+import { formatCurrency } from "~/utils/format";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const cars = await getCarsForUser(userId);
 
+  const carIds = cars.map((c) => c.id);
+
+  const [lastRecordsRaw, countGroupsRaw] = await Promise.all([
+    carIds.length > 0
+      ? db.maintenanceRecord.findMany({
+          where: { carId: { in: carIds } },
+          orderBy: { date: "desc" },
+          select: { carId: true, date: true },
+        })
+      : Promise.resolve([]),
+    carIds.length > 0
+      ? db.maintenanceRecord.groupBy({
+          by: ["carId"],
+          where: { carId: { in: carIds } },
+          _count: { id: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const lastRecordsByCarId = new Map<string, string>();
+  for (const record of lastRecordsRaw) {
+    if (!lastRecordsByCarId.has(record.carId)) {
+      lastRecordsByCarId.set(record.carId, record.date.toISOString());
+    }
+  }
+
+  const recordCountsByCarId = new Map<string, number>();
+  for (const group of countGroupsRaw) {
+    recordCountsByCarId.set(group.carId, group._count.id);
+  }
+
   const carsWithDue = await Promise.all(
     cars.map(async (car) => {
       const due = await getMaintenanceDue(car.id, car.currentMileage);
-      const lastRecord = await db.maintenanceRecord.findFirst({
-        where: { carId: car.id },
-        orderBy: { date: "desc" },
-        select: { date: true },
-      });
-      const recordCount = await db.maintenanceRecord.count({ where: { carId: car.id } });
       return {
         car,
         dueCount: due.length,
-        lastServiceDate: lastRecord ? lastRecord.date.toISOString() : null,
-        totalRecords: recordCount,
+        lastServiceDate: lastRecordsByCarId.get(car.id) ?? null,
+        totalRecords: recordCountsByCarId.get(car.id) ?? 0,
       };
     })
   );
 
-  return json({ carsWithDue });
+  let totalRecords = 0;
+  let totalCost = 0;
+  if (carIds.length > 0) {
+    totalRecords = await db.maintenanceRecord.count({ where: { carId: { in: carIds } } });
+    const costAgg = await db.maintenanceRecord.aggregate({
+      where: { carId: { in: carIds }, cost: { not: null } },
+      _sum: { cost: true },
+    });
+    totalCost = costAgg._sum.cost ?? 0;
+  }
+
+  return json({ carsWithDue, totalRecords, totalCost });
 }
 
 export default function CarsIndex() {
-  const { carsWithDue } = useLoaderData<typeof loader>();
+  const { carsWithDue, totalRecords, totalCost } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
 
   const filteredCars = useMemo(() => {
@@ -62,6 +99,26 @@ export default function CarsIndex() {
         </div>
       ) : (
         <>
+          {carsWithDue.length > 0 && (
+            <div className="card" style={{ display: "flex", gap: "2rem", padding: "1rem 1.5rem", marginBottom: "1rem", background: "#f8fafc" }}>
+              <div>
+                <strong>{carsWithDue.length}</strong>
+                <span className="text-muted text-sm" style={{ marginLeft: "0.35rem" }}>car{carsWithDue.length !== 1 ? "s" : ""}</span>
+              </div>
+              {totalRecords > 0 && (
+                <div>
+                  <strong>{totalRecords}</strong>
+                  <span className="text-muted text-sm" style={{ marginLeft: "0.35rem" }}>service record{totalRecords !== 1 ? "s" : ""}</span>
+                </div>
+              )}
+              {totalCost > 0 && (
+                <div>
+                  <strong>{formatCurrency(totalCost)}</strong>
+                  <span className="text-muted text-sm" style={{ marginLeft: "0.35rem" }}>total spent</span>
+                </div>
+              )}
+            </div>
+          )}
           <div className="form-group mb-2">
             <input
               type="search"

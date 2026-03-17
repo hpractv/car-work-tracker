@@ -397,6 +397,16 @@ export default function CarDetail() {
                   <option key={t} value={t}>{formatMaintenanceType(t)}</option>
                 ))}
               </select>
+              {filterType && (
+                <button
+                  onClick={() => updateParam("type", "")}
+                  className="btn btn-secondary btn-sm"
+                  style={{ padding: "0.25rem 0.5rem" }}
+                  aria-label="Clear filter"
+                >
+                  × Clear
+                </button>
+              )}
             </div>
           )}
           {car.maintenanceRecords.length > 1 && (
@@ -415,6 +425,11 @@ export default function CarDetail() {
             </div>
           )}
         </div>
+        {filterType && (
+          <span className="text-sm text-muted">
+            Showing {filteredRecords.length} of {car.maintenanceRecords.length} records
+          </span>
+        )}
         <MaintenanceList records={paginatedRecords} carId={car.id} />
         {totalPages > 1 && (
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid #e2e8f0" }}>

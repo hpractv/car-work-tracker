@@ -5,8 +5,8 @@ import {
   type LoaderFunctionArgs,
 } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
-import { requireUserId } from "~/session.server";
-import { getUserById, getUserByEmail, updateUserProfile, updateUserPassword } from "~/models/user.server";
+import { requireUserId, getSession, sessionStorage } from "~/session.server";
+import { getUserById, getUserByEmail, updateUserProfile, updateUserPassword, deleteUser } from "~/models/user.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -25,16 +25,16 @@ export async function action({ request }: ActionFunctionArgs) {
     const email = String(formData.get("email") ?? "").trim();
 
     if (!email) {
-      return json({ profileError: "Email is required", passwordError: null, success: null });
+      return json({ profileError: "Email is required", passwordError: null, success: null, deleteError: null });
     }
 
     const existing = await getUserByEmail(email);
     if (existing && existing.id !== userId) {
-      return json({ profileError: "That email is already in use", passwordError: null, success: null });
+      return json({ profileError: "That email is already in use", passwordError: null, success: null, deleteError: null });
     }
 
     await updateUserProfile(userId, { name, email });
-    return json({ profileError: null, passwordError: null, success: "profile" });
+    return json({ profileError: null, passwordError: null, success: "profile", deleteError: null });
   }
 
   if (intent === "password") {
@@ -43,24 +43,40 @@ export async function action({ request }: ActionFunctionArgs) {
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      return json({ profileError: null, passwordError: "All password fields are required", success: null });
+      return json({ profileError: null, passwordError: "All password fields are required", success: null, deleteError: null });
     }
     if (newPassword.length < 8) {
-      return json({ profileError: null, passwordError: "New password must be at least 8 characters", success: null });
+      return json({ profileError: null, passwordError: "New password must be at least 8 characters", success: null, deleteError: null });
     }
     if (newPassword !== confirmPassword) {
-      return json({ profileError: null, passwordError: "New passwords do not match", success: null });
+      return json({ profileError: null, passwordError: "New passwords do not match", success: null, deleteError: null });
     }
 
     const result = await updateUserPassword(userId, currentPassword, newPassword);
     if (!result) {
-      return json({ profileError: null, passwordError: "Current password is incorrect", success: null });
+      return json({ profileError: null, passwordError: "Current password is incorrect", success: null, deleteError: null });
     }
 
-    return json({ profileError: null, passwordError: null, success: "password" });
+    return json({ profileError: null, passwordError: null, success: "password", deleteError: null });
   }
 
-  return json({ profileError: null, passwordError: "Unknown action", success: null });
+  if (intent === "deleteAccount") {
+    const password = String(formData.get("deletePassword") ?? "");
+    if (!password) return json({ profileError: null, passwordError: null, success: null, deleteError: "Password is required" }, { status: 400 });
+    try {
+      await deleteUser(userId, password);
+      const session = await getSession(request);
+      return redirect("/signup", {
+        headers: {
+          "Set-Cookie": await sessionStorage.destroySession(session),
+        },
+      });
+    } catch (e) {
+      return json({ profileError: null, passwordError: null, success: null, deleteError: (e as Error).message }, { status: 400 });
+    }
+  }
+
+  return json({ profileError: null, passwordError: "Unknown action", success: null, deleteError: null });
 }
 
 export default function Profile() {
@@ -159,6 +175,44 @@ export default function Profile() {
           </div>
           <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
             {isSubmitting ? "Changing..." : "Change Password"}
+          </button>
+        </Form>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="card" style={{ borderLeft: "4px solid #dc2626", marginTop: "1.5rem" }}>
+        <h2 style={{ color: "#dc2626", marginTop: 0 }}>⚠️ Danger Zone</h2>
+        <p className="text-muted text-sm">
+          Permanently delete your account and all associated data. This cannot be undone.
+          Cars you own with no other owners will also be deleted.
+        </p>
+        {actionData?.deleteError && (
+          <div className="alert alert-error mb-2">{actionData.deleteError}</div>
+        )}
+        <Form method="post">
+          <input type="hidden" name="intent" value="deleteAccount" />
+          <div className="form-group">
+            <label htmlFor="deletePassword">Confirm with your password</label>
+            <input
+              id="deletePassword"
+              name="deletePassword"
+              type="password"
+              required
+              className="form-control"
+              placeholder="Enter your current password"
+            />
+          </div>
+          <button
+            type="submit"
+            className="btn btn-danger"
+            disabled={isSubmitting}
+            onClick={(e) => {
+              if (!window.confirm("Are you sure you want to permanently delete your account? This cannot be undone.")) {
+                e.preventDefault();
+              }
+            }}
+          >
+            {isSubmitting ? "Deleting..." : "Delete My Account"}
           </button>
         </Form>
       </div>

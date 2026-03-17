@@ -51,3 +51,24 @@ export async function updateUserPassword(
   await db.user.update({ where: { id: userId }, data: { passwordHash } });
   return true;
 }
+
+export async function deleteUser(userId: string, password: string) {
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("User not found");
+  const isValid = await bcrypt.compare(password, user.passwordHash);
+  if (!isValid) throw new Error("Incorrect password — account not deleted");
+  // Delete cars where this user is the sole owner before deleting the user
+  const ownedCars = await db.carMember.findMany({
+    where: { userId, role: "owner" },
+    select: { carId: true },
+  });
+  for (const { carId } of ownedCars) {
+    const otherOwners = await db.carMember.count({
+      where: { carId, role: "owner", NOT: { userId } },
+    });
+    if (otherOwners === 0) {
+      await db.car.delete({ where: { id: carId } });
+    }
+  }
+  return db.user.delete({ where: { id: userId } });
+}

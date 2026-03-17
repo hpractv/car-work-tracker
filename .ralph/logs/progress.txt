@@ -104,3 +104,31 @@ Tasks Completed: ✅ All 10
 Build result: npm run build ✅ exit code 0 — 124 client modules + 33 SSR modules + PWA service worker (30 precached entries)
 TypeCheck: npm run typecheck ✅ exit code 0
 Git: Committed and tagged below.
+---
+[2026-03-17] Loop 6
+
+Tasks Attempted:
+- Fix maintenance due logic: remove "no record found" - only flag when interval is genuinely exceeded
+- Add getMaintenanceApproaching() function - returns types at 60-99% of service interval  
+- Settings page: full CRUD for maintenance types (create inline, edit inline, delete with confirm)
+- Quick Log Service buttons on all due maintenance items in dashboard and car detail
+- Dashboard: Upcoming Maintenance section showing approaching items with progress bars
+- Car detail: client-side pagination (PAGE_SIZE=10) for maintenance history list
+- Car detail: Monthly Spending last-12-months inline bar chart
+- Car detail: due maintenance card with per-item Log Service links (replaces simple AlertBanner)
+- NearbyServicesAlert: expandable list of up to 5 nearby shops with distances toggle
+- Add /offline route - PWA offline page with "Try Again" button
+- vite.config.ts: navigateFallback=/offline for service worker offline navigation
+- CSV export: ISO date format (YYYY-MM-DD)
+- Maintenance new form: pre-selects type from ?type= URL query param
+
+Tasks Completed: ✅ All 13
+
+Build result: npm run build ✅ exit code 0 — 125 client modules + 33 SSR modules + PWA service worker (31 precached entries)
+TypeCheck: npm run typecheck ✅ exit code 0
+Git: Committed (9 files changed, 429 insertions, 48 deletions). Tagged: 0.0.6. No remote configured, push skipped.
+
+Notable findings:
+- The "no record found" due logic was marking ALL 11 maintenance types as due for any car with at least one service record. Fixed to only flag when an interval is genuinely exceeded based on actual records.
+- getMaintenanceApproaching reuses getServiceIntervalStatus logic to efficiently compute 60-99% items
+- NearbyServicesAlert no longer imports AlertBanner (uses inline div) to support the expandable list layout
