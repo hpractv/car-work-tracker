@@ -60,9 +60,20 @@
 - [x] Add entry.server.tsx: proper SSR entry point with streaming support and 5s abort timeout
 - [x] Add favicon.svg: SVG favicon created in public/ and linked in root.tsx links function
 
+## ✅ Completed - Phase 9: Loop 4 Security, Validation & UX Improvements
+- [x] Fix authorization on cars.$carId.edit.tsx loader — drivers now get 403 Forbidden instead of seeing the edit form
+- [x] Add SESSION_SECRET production guard — throws error in production if env var missing, warns in dev
+- [x] Improve server-side input validation — year range (1886–currentYear+2), mileage ≥0, cost ≥0 in all 4 form routes
+- [x] Fix NearbyServicesAlert geolocation error handling — shows permission denied / unavailable / generic messages instead of silent null
+- [x] URL-persisted maintenance type filter on car detail — uses useSearchParams so filter state survives refresh
+- [x] Add fleet stats card to dashboard — shows total cars, records, total spend, cars needing service
+- [x] Create app/utils/format.ts utility — formatMaintenanceType, formatDate, formatCurrency, formatMileage shared helpers
+- [x] Fix maintenance type name inconsistency — AlertBanner in car detail was showing lowercase types, now uses formatMaintenanceType
+- [x] Enhanced CarCard — shows last service date and record count below mileage
+- [x] Update cars._index.tsx — passes lastServiceDate and totalRecords to CarCard
+
 ## 📋 Future Improvements
-- [ ] Add `v3_singleFetch` future flag (breaking change — requires loader return type migration)  
+- [ ] Add `v3_singleFetch` future flag (breaking change — requires loader return type migration)
 - [ ] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration
-- [ ] Add `entry.server.tsx` custom streaming — DONE in Loop 3
 - [ ] Add app icons in multiple sizes for better PWA compliance
 - [ ] Add offline indicator UI when service worker detects no network

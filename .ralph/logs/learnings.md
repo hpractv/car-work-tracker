@@ -94,3 +94,26 @@ if (existing) throw new Error("That user is already a member of this car");
 ## entry.server.tsx and Streaming SSR
 
 Remix uses a default `handleRequest` if no `entry.server.tsx` exists. Adding one with `renderToPipeableStream` enables proper streaming HTML responses, better error boundaries, and a configurable abort timeout. The 5-second `ABORT_DELAY` ensures stuck renders don't block indefinitely.
+
+## URL-Persisted Filter State with useSearchParams
+
+When a filter (e.g., maintenance type) uses `useState`, it resets on navigation and cannot be bookmarked. Use `useSearchParams` from `@remix-run/react` instead:
+```ts
+const [searchParams, setSearchParams] = useSearchParams();
+const filterType = searchParams.get("type") ?? "";
+// On change:
+setSearchParams(e.target.value ? { type: e.target.value } : {}, { replace: true });
+```
+Using `replace: true` prevents each filter change from adding a new browser history entry.
+
+## Centralised Formatting Utilities
+
+Avoid scattering `type.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())` inline across multiple files. Put shared helpers in `app/utils/format.ts` and import everywhere. This also makes it easy to catch subtle inconsistencies (e.g., the AlertBanner in car detail was only doing the first replace — missing capitalisation).
+
+## GeolocationPositionError.code Values
+
+When handling `navigator.geolocation.getCurrentPosition` errors, use the numeric `error.code` to distinguish cases:
+- `1` = PERMISSION_DENIED
+- `2` = POSITION_UNAVAILABLE
+- `3` = TIMEOUT
+This lets you show targeted messages ("Enable location to find nearby service stations") instead of a generic fallback.

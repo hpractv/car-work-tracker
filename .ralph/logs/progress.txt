@@ -63,3 +63,24 @@ Tasks Completed: ✅ All 9
 
 Build result: npm run build ✅ exit code 0 — 118 client modules + 29 SSR modules + PWA service worker (27 precached entries)
 Git: Committed and tagged below.
+
+
+---
+[2026-03-17] Loop 4
+
+Tasks Attempted:
+- Fix authorization on cars.$carId.edit.tsx loader (security: drivers could see edit form UI)
+- Add SESSION_SECRET production guard in session.server.ts
+- Improve server-side input validation in 4 form routes (cars.new, cars.edit, maintenance.new, maintenance.edit)
+- Fix NearbyServicesAlert geolocation permission denied / error handling
+- URL-persisted maintenance type filter (useSearchParams) on car detail page
+- Add fleet stats card to dashboard (total cars, records, spend, needing service)
+- Create app/utils/format.ts with shared formatting utilities
+- Fix maintenance type name inconsistency (AlertBanner was lowercase)
+- Enhanced CarCard with last service date + record count
+- Update cars._index.tsx loader to pass new CarCard props
+
+Tasks Completed: ✅ All 10
+
+Build result: npm run build ✅ exit code 0 — 120 client modules + 31 SSR modules + PWA service worker (28 precached entries)
+TypeCheck: npm run typecheck ✅ exit code 0

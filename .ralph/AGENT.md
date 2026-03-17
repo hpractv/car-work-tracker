@@ -20,3 +20,11 @@
 The `tsconfig.json` has `"noEmit": true` — do NOT remove this. Without it, running `tsc` emits `.js` files next to every TypeScript source file, causing Remix Route ID Collision warnings.
 
 **Git Ignore:** A `.gitignore` is now present covering `node_modules/`, `build/`, `.env`, and Prisma dev database files.
+
+**Format Utilities:**
+- Shared formatting helpers are in `app/utils/format.ts`: `formatMaintenanceType`, `formatDate`, `formatCurrency`, `formatMileage`
+- Always import from this file instead of inlining `.replace(/_/g, " ")` chains
+
+**Security Notes:**
+- `SESSION_SECRET` env var must be set before starting the server in production — it will throw at startup if missing
+- The edit route for cars (`/cars/:id/edit`) is now owner-only at the loader level (throws 403 for drivers)
