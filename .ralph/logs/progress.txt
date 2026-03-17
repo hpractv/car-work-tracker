@@ -1,1 +1,19 @@
 
+
+---
+[2026-03-17] Loop 1
+
+Tasks Attempted:
+- Fix build failure (~/alias not resolved by Rollup)
+- Fix logout.tsx loader bug (fake Request)
+- Fix root.tsx missing auth loader and conditional nav
+- Fix seed.ts to include dev user
+
+Tasks Completed: ✅ All 4
+- vite.config.ts: Added resolve.alias for ~ using fileURLToPath so Rollup resolves ~/components/* during production build — BUILD NOW PASSES
+- logout.tsx: Fixed loader to accept real { request } param, session is properly destroyed on GET /logout
+- root.tsx: Added loader returning { isLoggedIn }, navbar now shows My Cars+Logout (authenticated) or Sign In+Sign Up (unauthenticated)
+- prisma/seed.ts: Added dev@example.com / password123 user upsert for local testing
+
+Build result: npm run build ✅ exit code 0 — 116 client modules + 28 SSR modules + PWA service worker generated
+Git: Committed (no remote configured, skipped push). Tagged: 0.0.1

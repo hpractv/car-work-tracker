@@ -45,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return json({ error: "Type, date, and mileage are required" }, { status: 400 });
   }
 
-  const date = new Date(dateStr);
+  const date = new Date(dateStr + "T12:00:00");
   const cost = costRaw ? parseFloat(costRaw) : null;
 
   await updateMaintenanceRecord(recordId, { type, date, mileage, cost, vendor, description });

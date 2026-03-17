@@ -52,6 +52,7 @@ export default function App() {
             {isLoggedIn ? (
               <>
                 <a href="/cars">My Cars</a>
+                <a href="/profile">Profile</a>
                 <Form method="post" action="/logout" style={{ display: "inline" }}>
                   <button
                     type="submit"
@@ -85,6 +86,7 @@ export default function App() {
         </main>
         <ScrollRestoration />
         <Scripts />
+        <script src="/registerSW.js" />
       </body>
     </html>
   );

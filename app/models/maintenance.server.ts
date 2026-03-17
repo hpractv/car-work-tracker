@@ -22,7 +22,15 @@ export async function createMaintenanceRecord(data: {
   vendor?: string | null;
   description?: string | null;
 }) {
-  return db.maintenanceRecord.create({ data });
+  return db.$transaction(async (tx) => {
+    const record = await tx.maintenanceRecord.create({ data });
+    // Auto-update car mileage if service mileage is higher
+    await tx.car.updateMany({
+      where: { id: data.carId, currentMileage: { lt: data.mileage } },
+      data: { currentMileage: data.mileage },
+    });
+    return record;
+  });
 }
 
 export async function updateMaintenanceRecord(
@@ -36,7 +44,17 @@ export async function updateMaintenanceRecord(
     description?: string | null;
   }
 ) {
-  return db.maintenanceRecord.update({ where: { id: recordId }, data });
+  return db.$transaction(async (tx) => {
+    const record = await tx.maintenanceRecord.update({ where: { id: recordId }, data });
+    // Auto-update car mileage if the new service mileage is higher
+    if (data.mileage !== undefined) {
+      await tx.car.updateMany({
+        where: { id: record.carId, currentMileage: { lt: data.mileage } },
+        data: { currentMileage: data.mileage },
+      });
+    }
+    return record;
+  });
 }
 
 export async function deleteMaintenanceRecord(recordId: string, carId: string) {
@@ -56,6 +74,10 @@ export async function getMaintenanceDue(carId: string, currentMileage: number) {
     orderBy: { date: "desc" },
   });
 
+  // If car has no maintenance history at all, don't show "no record found" warnings
+  // This avoids overwhelming new users with alerts for everything
+  const hasAnyHistory = records.length > 0;
+
   const due: Array<{
     type: string;
     reason: string;
@@ -68,7 +90,10 @@ export async function getMaintenanceDue(carId: string, currentMileage: number) {
     const now = new Date();
 
     if (!lastRecord) {
-      due.push({ type: mt.name, reason: "No record found" });
+      // Only mark as due if the car has some history but is missing this specific type
+      if (hasAnyHistory) {
+        due.push({ type: mt.name, reason: "No record found" });
+      }
       continue;
     }
 

@@ -76,6 +76,19 @@ export default function CarDetail() {
             + Add Record
           </Link>
         </div>
+        {car.maintenanceRecords.length > 0 && (
+          <div className="flex gap-md text-sm text-muted mb-2">
+            <span>{car.maintenanceRecords.length} record{car.maintenanceRecords.length !== 1 ? "s" : ""}</span>
+            {car.maintenanceRecords.some((r) => r.cost != null) && (
+              <span>
+                Total cost: ${car.maintenanceRecords
+                  .filter((r) => r.cost != null)
+                  .reduce((sum, r) => sum + (r.cost ?? 0), 0)
+                  .toFixed(2)}
+              </span>
+            )}
+          </div>
+        )}
         <MaintenanceList records={car.maintenanceRecords} carId={car.id} />
       </div>
 

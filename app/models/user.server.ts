@@ -27,3 +27,27 @@ export async function verifyLogin(email: string, password: string) {
   if (!isValid) return null;
   return user;
 }
+
+export async function updateUserProfile(
+  userId: string,
+  data: { name: string | null; email: string }
+) {
+  return db.user.update({
+    where: { id: userId },
+    data,
+  });
+}
+
+export async function updateUserPassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<boolean> {
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) return false;
+  const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!isValid) return false;
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await db.user.update({ where: { id: userId }, data: { passwordHash } });
+  return true;
+}

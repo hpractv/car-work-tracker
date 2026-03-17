@@ -51,6 +51,14 @@ export default function NearbyServicesAlert({
     );
   }, [maintenanceDue.length]);
 
+  if (maintenanceDue.length > 0 && loading) {
+    return (
+      <div className="alert alert-info">
+        <span>📍 Checking for nearby service stations...</span>
+      </div>
+    );
+  }
+
   if (!checked || maintenanceDue.length === 0 || services.length === 0) {
     return null;
   }
