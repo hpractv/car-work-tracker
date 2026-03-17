@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import AlertBanner from "./AlertBanner";
 import { formatMaintenanceType } from "~/utils/format";
 
 interface NearbyService {
@@ -20,6 +19,7 @@ export default function NearbyServicesAlert({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
+  const [showList, setShowList] = useState(false);
 
   useEffect(() => {
     if (maintenanceDue.length === 0) return;
@@ -44,13 +44,12 @@ export default function NearbyServicesAlert({
           setChecked(true);
         }
       },
-      (error) => {
+      (err) => {
         setLoading(false);
         setChecked(true);
-        if (error.code === 1) {
-          // GeolocationPositionError.PERMISSION_DENIED
+        if (err.code === 1) {
           setError("Location access denied — enable location to find nearby service stations");
-        } else if (error.code === 2) {
+        } else if (err.code === 2) {
           setError("Location unavailable");
         } else {
           setError("Could not determine your location");
@@ -82,13 +81,32 @@ export default function NearbyServicesAlert({
 
   const dueTypes = maintenanceDue.map((d) => formatMaintenanceType(d.type)).join(", ");
   const nearest = services[0];
+  const displayServices = services.slice(0, 5);
 
   return (
-    <AlertBanner
-      severity="warning"
-      message={`Maintenance due (${dueTypes}) — ${services.length} service station(s) nearby. Nearest: "${nearest.name}" (${(nearest.distance / 1000).toFixed(1)} km away)`}
-    />
+    <div className="alert alert-warning" style={{ flexDirection: "column", gap: "0.5rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+        <span>
+          ⚠️ <strong>Maintenance due</strong> ({dueTypes}) — {services.length} service station{services.length !== 1 ? "s" : ""} nearby.{" "}
+          Nearest: <strong>"{nearest.name}"</strong> ({(nearest.distance / 1000).toFixed(1)} km away)
+        </span>
+        <button
+          onClick={() => setShowList(!showList)}
+          style={{ background: "none", border: "1px solid #f59e0b", borderRadius: "4px", padding: "0.2rem 0.5rem", cursor: "pointer", color: "#92400e", fontSize: "0.8rem", whiteSpace: "nowrap", marginLeft: "0.5rem" }}
+        >
+          {showList ? "Hide ▲" : "Show nearby shops ▼"}
+        </button>
+      </div>
+      {showList && (
+        <ul style={{ margin: 0, padding: 0, listStyle: "none", width: "100%", borderTop: "1px solid #f59e0b", paddingTop: "0.5rem" }}>
+          {displayServices.map((s, i) => (
+            <li key={i} style={{ display: "flex", justifyContent: "space-between", padding: "0.2rem 0", fontSize: "0.85rem" }}>
+              <span>{i + 1}. {s.name}</span>
+              <span style={{ color: "#92400e" }}>{(s.distance / 1000).toFixed(1)} km</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
-
-

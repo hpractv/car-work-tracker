@@ -15,7 +15,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const car = await getCarById(params.carId!, userId);
   if (!car) throw new Response("Not Found", { status: 404 });
   const maintenanceTypes = await getMaintenanceTypes();
-  return json({ car, maintenanceTypes });
+  const defaultType = new URL(request.url).searchParams.get("type") ?? "";
+  return json({ car, maintenanceTypes, defaultType });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -50,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function NewMaintenance() {
-  const { car, maintenanceTypes } = useLoaderData<typeof loader>();
+  const { car, maintenanceTypes, defaultType } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
@@ -74,7 +75,7 @@ export default function NewMaintenance() {
         <Form method="post">
           <div className="form-group">
             <label htmlFor="type">Maintenance Type *</label>
-            <select id="type" name="type" required className="form-control">
+            <select id="type" name="type" required className="form-control" defaultValue={defaultType}>
               <option value="">Select type...</option>
               {maintenanceTypes.map((mt) => (
                 <option key={mt.id} value={mt.name}>

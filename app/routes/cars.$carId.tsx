@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Link, useRouteError, isRouteErrorResponse, useSearchParams, Form, useNavigation } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
@@ -5,7 +6,6 @@ import { formatMaintenanceType, formatDate, formatCurrency, formatMileage } from
 import { getCarById, updateCarMileage } from "~/models/car.server";
 import { getMaintenanceDue, getServiceIntervalStatus } from "~/models/maintenance.server";
 import MaintenanceList from "~/components/MaintenanceList";
-import AlertBanner from "~/components/AlertBanner";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -70,11 +70,21 @@ export default function CarDetail() {
   const sortField = (searchParams.get("sort") as SortField) ?? "date";
   const sortDir = (searchParams.get("dir") as SortDir) ?? "desc";
 
+  const PAGE_SIZE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterType, sortField, sortDir]);
+
   const uniqueTypes = [...new Set(car.maintenanceRecords.map((r) => r.type))].sort();
   const filteredRecords = filterType
     ? car.maintenanceRecords.filter((r) => r.type === filterType)
     : car.maintenanceRecords;
   const sortedRecords = sortRecords(filteredRecords, sortField, sortDir);
+
+  const totalPages = Math.ceil(sortedRecords.length / PAGE_SIZE);
+  const paginatedRecords = sortedRecords.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // Per-type cost breakdown
   const costByType = car.maintenanceRecords
@@ -86,6 +96,27 @@ export default function CarDetail() {
       return acc;
     }, {});
   const costEntries = Object.entries(costByType).sort((a, b) => b[1].total - a[1].total);
+
+  // Monthly spending computation
+  const monthlySpending = (() => {
+    const now = new Date();
+    const months: Array<{ label: string; total: number }> = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+      const total = car.maintenanceRecords
+        .filter((r) => {
+          const rd = new Date(r.date);
+          return rd.getFullYear() === d.getFullYear() && rd.getMonth() === d.getMonth() && r.cost != null;
+        })
+        .reduce((s, r) => s + (r.cost ?? 0), 0);
+      months.push({ label, total });
+    }
+    return months;
+  })();
+
+  const maxMonthly = Math.max(...monthlySpending.map(m => m.total), 1);
+  const hasMonthlyData = monthlySpending.some(m => m.total > 0);
 
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams);
@@ -138,10 +169,26 @@ export default function CarDetail() {
       </div>
 
       {due.length > 0 && (
-        <AlertBanner
-          severity="warning"
-          message={`Maintenance due: ${due.map((d) => formatMaintenanceType(d.type)).join(", ")}`}
-        />
+        <div className="card" style={{ borderLeft: "4px solid #f59e0b", marginBottom: "1rem" }}>
+          <h2 style={{ color: "#92400e", marginBottom: "0.75rem" }}>⚠️ Maintenance Due</h2>
+          <ul style={{ margin: 0, listStyle: "none", padding: 0 }}>
+            {due.map((d) => (
+              <li key={d.type} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.3rem 0", borderBottom: "1px solid #fef3c7" }}>
+                <div>
+                  <strong className="text-sm">{formatMaintenanceType(d.type)}</strong>
+                  <span className="text-muted text-sm" style={{ marginLeft: "0.5rem" }}>{d.reason}</span>
+                </div>
+                <Link
+                  to={`/cars/${car.id}/maintenance/new?type=${encodeURIComponent(d.type)}`}
+                  className="btn btn-primary btn-sm"
+                  style={{ marginLeft: "0.5rem", whiteSpace: "nowrap" }}
+                >
+                  Log Service
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem" }}>
@@ -221,6 +268,31 @@ export default function CarDetail() {
           </div>
         )}
       </div>
+
+      {/* Monthly Spending Chart */}
+      {hasMonthlyData && (
+        <div className="card">
+          <h2>Monthly Spending (Last 12 Months)</h2>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: "4px", height: "80px" }}>
+            {monthlySpending.map((m) => (
+              <div key={m.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                <div
+                  title={`${m.label}: ${m.total > 0 ? "$" + m.total.toFixed(0) : "—"}`}
+                  style={{
+                    background: m.total > 0 ? "#1e40af" : "#e2e8f0",
+                    borderRadius: "3px 3px 0 0",
+                    width: "100%",
+                    height: `${m.total > 0 ? Math.max(4, Math.round((m.total / maxMonthly) * 64)) : 2}px`,
+                    transition: "height 0.2s",
+                  }}
+                />
+                <span style={{ fontSize: "0.6rem", color: "#94a3b8", writingMode: "vertical-lr", transform: "rotate(180deg)", height: "28px" }}>{m.label}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-muted text-sm mt-1">Hover bars for amounts. Blue = has records.</p>
+        </div>
+      )}
 
       {/* Service Schedule */}
       {typesWithHistory.length > 0 && (
@@ -343,7 +415,28 @@ export default function CarDetail() {
             </div>
           )}
         </div>
-        <MaintenanceList records={sortedRecords} carId={car.id} />
+        <MaintenanceList records={paginatedRecords} carId={car.id} />
+        {totalPages > 1 && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid #e2e8f0" }}>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="btn btn-secondary btn-sm"
+            >
+              ← Previous
+            </button>
+            <span className="text-sm text-muted">
+              Page {currentPage} of {totalPages} ({sortedRecords.length} records)
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="btn btn-secondary btn-sm"
+            >
+              Next →
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Members */}

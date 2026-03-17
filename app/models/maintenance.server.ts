@@ -67,16 +67,35 @@ export async function getMaintenanceTypes() {
   return db.maintenanceType.findMany({ orderBy: { name: "asc" } });
 }
 
+export async function createMaintenanceType(data: {
+  name: string;
+  defaultIntervalMiles?: number | null;
+  defaultIntervalMonths?: number | null;
+}) {
+  return db.maintenanceType.create({ data });
+}
+
+export async function updateMaintenanceType(
+  id: string,
+  data: {
+    name?: string;
+    defaultIntervalMiles?: number | null;
+    defaultIntervalMonths?: number | null;
+  }
+) {
+  return db.maintenanceType.update({ where: { id }, data });
+}
+
+export async function deleteMaintenanceType(id: string) {
+  return db.maintenanceType.delete({ where: { id } });
+}
+
 export async function getMaintenanceDue(carId: string, currentMileage: number) {
   const types = await db.maintenanceType.findMany();
   const records = await db.maintenanceRecord.findMany({
     where: { carId },
     orderBy: { date: "desc" },
   });
-
-  // If car has no maintenance history at all, don't show "no record found" warnings
-  // This avoids overwhelming new users with alerts for everything
-  const hasAnyHistory = records.length > 0;
 
   const due: Array<{
     type: string;
@@ -90,10 +109,6 @@ export async function getMaintenanceDue(carId: string, currentMileage: number) {
     const now = new Date();
 
     if (!lastRecord) {
-      // Only mark as due if the car has some history but is missing this specific type
-      if (hasAnyHistory) {
-        due.push({ type: mt.name, reason: "No record found" });
-      }
       continue;
     }
 
@@ -128,6 +143,32 @@ export async function getMaintenanceDue(carId: string, currentMileage: number) {
   }
 
   return due;
+}
+
+export async function getMaintenanceApproaching(
+  carId: string,
+  currentMileage: number
+): Promise<
+  Array<{
+    type: string;
+    overallPercent: number;
+    mileagePercent: number | null;
+    timePercent: number | null;
+    nextMileage: number | null;
+    nextDate: Date | null;
+  }>
+> {
+  const allStatuses = await getServiceIntervalStatus(carId, currentMileage);
+  return allStatuses
+    .filter((s) => s.hasHistory && s.overallPercent >= 60 && s.overallPercent < 100)
+    .map((s) => ({
+      type: s.type,
+      overallPercent: s.overallPercent,
+      mileagePercent: s.mileagePercent,
+      timePercent: s.timePercent,
+      nextMileage: s.nextMileage,
+      nextDate: s.nextDate,
+    }));
 }
 
 export async function getServiceIntervalStatus(carId: string, currentMileage: number) {

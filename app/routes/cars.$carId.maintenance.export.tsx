@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const headers = ["Date", "Type", "Mileage", "Cost ($)", "Vendor", "Notes"];
   const rows = records.map((r) => [
-    escapeCsvField(new Date(r.date).toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" })),
+    escapeCsvField(new Date(r.date).toISOString().split("T")[0]),
     escapeCsvField(formatMaintenanceType(r.type)),
     escapeCsvField(r.mileage),
     escapeCsvField(r.cost != null ? r.cost.toFixed(2) : ""),
