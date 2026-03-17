@@ -25,6 +25,16 @@ The `tsconfig.json` has `"noEmit": true` — do NOT remove this. Without it, run
 - Shared formatting helpers are in `app/utils/format.ts`: `formatMaintenanceType`, `formatDate`, `formatCurrency`, `formatMileage`
 - Always import from this file instead of inlining `.replace(/_/g, " ")` chains
 
+**Settings Page:**
+- Maintenance type intervals are global (affect all users)
+- "Restore Defaults" button on the Settings page re-seeds the 11 default maintenance types
+- Duplicate type names are caught with a friendly error message
+
+**Profile Page:**
+- /profile now has a "Danger Zone" section for account deletion
+- Requires password confirmation + browser confirm dialog
+- Deletes user + all solo-owned cars (cars with other owners are preserved)
+
 **Security Notes:**
 - `SESSION_SECRET` env var must be set before starting the server in production — it will throw at startup if missing
 - The edit route for cars (`/cars/:id/edit`) is now owner-only at the loader level (throws 403 for drivers)

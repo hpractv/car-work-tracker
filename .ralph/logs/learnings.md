@@ -157,3 +157,47 @@ Slice the sorted array: `sortedRecords.slice((currentPage - 1) * PAGE_SIZE, curr
 ## NearbyServicesAlert Inline Div vs AlertBanner for Expandable Lists
 
 When a banner needs interactive content (like an expandable list of services), it's better to use an inline `<div className="alert alert-warning">` directly rather than the `AlertBanner` component. The `AlertBanner` component renders a flat message string, which prevents adding buttons, lists, or other interactive elements inside the banner.
+## Batch Prisma Queries Instead of N+1 Loops
+
+When loading stats for a list of cars (record counts, last dates), avoid per-car DB calls in Promise.all loops. Instead:
+1. Extract all carIds first: `const carIds = cars.map(c => c.id)`
+2. Use a single `findMany` with `where: { carId: { in: carIds } }` ordered by date desc — first occurrence per carId is the most recent
+3. Use `groupBy(['carId'])` with `_count: { id: true }` for per-car counts
+4. Build Maps for O(1) lookup per car
+
+This reduces N×2 queries to 2 batch queries regardless of fleet size.
+
+## Client-side Mileage Validation with onSubmit
+
+To warn users when entered mileage is significantly lower than car's current mileage (data entry error), add an `onSubmit` handler to the Remix Form:
+```tsx
+<Form method="post" onSubmit={(e) => {
+  const mileageInput = e.currentTarget.elements.namedItem("mileage") as HTMLInputElement;
+  const entered = parseInt(mileageInput.value);
+  if (!isNaN(entered) && entered < car.currentMileage - 1000) {
+    if (!window.confirm(`Mileage (${entered.toLocaleString()}) is lower than current (${car.currentMileage.toLocaleString()}). Continue?`)) {
+      e.preventDefault();
+    }
+  }
+}}>
+```
+This is non-blocking — user can still save historical records by confirming.
+
+## Account Deletion with Cascade Cleanup
+
+When deleting a user account, Prisma's cascade on CarMember will only remove the membership row, not the car itself. Cars owned solely by the deleted user become orphaned. Fix: before deleting the user, find all cars where they are the ONLY owner and delete those cars first using a loop with `db.carMember.count({ where: { carId, role: 'owner', NOT: { userId } } })`.
+
+## Duplicate Prisma Constraint Error Handling
+
+To give a friendly error on P2002 (unique constraint violation), wrap the create call in try/catch and check the error code:
+```ts
+import { Prisma } from "@prisma/client";
+try {
+  await db.maintenanceType.create({ data });
+} catch (e) {
+  if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+    return json({ error: 'That name already exists' }, { status: 409 });
+  }
+  throw e; // re-throw unexpected errors
+}
+```

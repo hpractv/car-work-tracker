@@ -98,6 +98,16 @@
 - [x] CSV export: ISO date format (YYYY-MM-DD)
 - [x] Maintenance new form: pre-selects type from ?type= URL query param
 
+## ✅ Completed - Phase 12: Loop 7 Quality & UX Improvements
+- [x] Fix dashboard CarCards: now shows lastServiceDate and totalRecords (was inconsistent with /cars page)
+- [x] Optimize N+1 queries: batch queries replace per-car individual DB calls in dashboard and cars list loaders
+- [x] Settings: catch Prisma P2002 for duplicate type names — friendly "already exists" error
+- [x] Settings: Add "Restore Defaults" button — upserts 11 default maintenance types with confirmation
+- [x] Profile: Add "Danger Zone" account deletion — password-confirmed, deletes solo-owned cars
+- [x] Car detail: Add "× Clear" filter button + filtered record count display
+- [x] Cars list: Add fleet stats bar (cars count, service records, total spent) above search
+- [x] Maintenance forms: Client-side mileage warning when entered mileage < car current mileage - 1000
+
 ## 📋 Future Improvements
 - [ ] Add `v3_singleFetch` future flag (breaking change — requires loader return type migration)
 - [ ] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration

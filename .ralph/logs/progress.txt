@@ -132,3 +132,21 @@ Notable findings:
 - The "no record found" due logic was marking ALL 11 maintenance types as due for any car with at least one service record. Fixed to only flag when an interval is genuinely exceeded based on actual records.
 - getMaintenanceApproaching reuses getServiceIntervalStatus logic to efficiently compute 60-99% items
 - NearbyServicesAlert no longer imports AlertBanner (uses inline div) to support the expandable list layout
+---
+[2026-03-17] Loop 7
+
+Tasks Attempted:
+- Fix dashboard CarCards missing lastServiceDate and totalRecords
+- Optimize N+1 queries in dashboard and cars list loaders (batch queries)
+- Settings: catch Prisma P2002 for duplicate type names
+- Settings: Add "Restore Defaults" button with 11 default types
+- Profile: Add "Danger Zone" account deletion (password-confirmed)
+- Car detail: Add "× Clear" filter button + filtered record count
+- Cars list: Add fleet stats bar (cars, records, total spent)
+- Maintenance new/edit forms: Client-side mileage warning dialog
+
+Tasks Completed: ✅ All 8
+
+Build result: npm run build ✅ exit code 0 — 125 client modules + 33 SSR modules + PWA service worker (31 precached entries)
+TypeCheck: npm run typecheck ✅ exit code 0
+Git: Committed and tagged.
