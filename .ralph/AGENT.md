@@ -39,12 +39,20 @@ The `tsconfig.json` has `"noEmit": true` — do NOT remove this. Without it, run
 - `SESSION_SECRET` env var must be set before starting the server in production — it will throw at startup if missing
 - The edit route for cars (`/cars/:id/edit`) is now owner-only at the loader level (throws 403 for drivers)
 
-**New Routes Added (Loop 8):**
-- `/maintenance` — Global maintenance history across all cars (maintenance._index.tsx)
-- `/cars/export` — Fleet-wide CSV download (cars.export.tsx)
+**New Routes Added (Loop 9):**
+- `/reports` — Analytics: year-over-year cost, cost by car/type, monthly trend (pure CSS charts)
+- `/search` — Global search across cars and maintenance records
+- `/cars/:carId/print` — Printable maintenance history report (standalone HTML, bypasses root layout)
 
-**Batch Query Pattern:**
-- `getBatchMaintenanceDue(cars)` and `getBatchMaintenanceApproaching(cars)` in `maintenance.server.ts` — use these in loaders that process multiple cars (dashboard, cars list). They do 2 DB queries regardless of fleet size. Per-car functions remain for single-car pages.
+**Prisma Schema (Loop 9 additions):**
+- `Car.imageUrl String?` — optional URL to a car photo (shown as thumbnail in CarCard + detail)
+- `Car.notes String?` — optional freeform notes about the car
+- `MaintenanceRecord.receiptUrl String?` — optional URL to a receipt/invoice
 
 **Navbar Links (authenticated):**
-Dashboard | My Cars | History | Settings | Profile | Logout
+Dashboard | My Cars | History | Reports | Settings | Profile | Logout
+(Dashboard shows a red badge with count of due maintenance items)
+
+**New Routes Added (Loop 8):**
+- `/maintenance` — Global maintenance history across all cars (server-side filter/sort/pagination)
+- `/cars/export` — Fleet-wide CSV download (cars.export.tsx)
