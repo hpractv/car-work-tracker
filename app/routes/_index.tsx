@@ -2,7 +2,7 @@ import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useRouteError, isRouteErrorResponse } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { getCarsForUser } from "~/models/car.server";
-import { getMaintenanceDue, getMaintenanceApproaching } from "~/models/maintenance.server";
+import { getBatchMaintenanceDue, getBatchMaintenanceApproaching } from "~/models/maintenance.server";
 import { getUserById } from "~/models/user.server";
 import { db } from "~/db.server";
 import { formatMaintenanceType, formatDate } from "~/utils/format";
@@ -46,17 +46,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     recordCountsByCarId.set(group.carId, group._count.id);
   }
 
-  const carsWithDue = await Promise.all(
-    cars.map(async (car) => {
-      const due = await getMaintenanceDue(car.id, car.currentMileage);
-      return {
-        car,
-        due,
-        lastServiceDate: lastRecordsByCarId.get(car.id) ?? null,
-        totalRecords: recordCountsByCarId.get(car.id) ?? 0,
-      };
-    })
-  );
+  const [dueMap, approachingMap] = await Promise.all([
+    getBatchMaintenanceDue(cars.map((c) => ({ id: c.id, currentMileage: c.currentMileage }))),
+    getBatchMaintenanceApproaching(cars.map((c) => ({ id: c.id, currentMileage: c.currentMileage }))),
+  ]);
+
+  const carsWithDue = cars.map((car) => ({
+    car,
+    due: dueMap.get(car.id) ?? [],
+    lastServiceDate: lastRecordsByCarId.get(car.id) ?? null,
+    totalRecords: recordCountsByCarId.get(car.id) ?? 0,
+  }));
 
   const recentRecords = await db.maintenanceRecord.findMany({
     where: { car: { members: { some: { userId } } } },
@@ -80,12 +80,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const totalCost = costAggregate._sum.cost ?? 0;
   const carsWithDueCount = carsWithDue.filter((c) => c.due.length > 0).length;
 
-  const carsWithApproaching = await Promise.all(
-    cars.map(async (car) => {
-      const approaching = await getMaintenanceApproaching(car.id, car.currentMileage);
-      return { car, approaching };
-    })
-  );
+  const carsWithApproaching = cars.map((car) => ({
+    car,
+    approaching: approachingMap.get(car.id) ?? [],
+  }));
 
   return json({ user, carsWithDue, carsWithApproaching, recentRecords, totalCars, totalRecords, totalCost, carsWithDueCount });
 }
@@ -172,7 +170,7 @@ export default function Index() {
           <h2>Your Cars</h2>
           <div className="grid">
             {carsWithDue.map(({ car, due, lastServiceDate, totalRecords }) => (
-              <CarCard key={car.id} car={car} dueCount={due.length} lastServiceDate={lastServiceDate} totalRecords={totalRecords} />
+              <CarCard key={car.id} car={car} dueCount={due.length} dueTypes={due.map(d => d.type)} lastServiceDate={lastServiceDate} totalRecords={totalRecords} />
             ))}
           </div>
 

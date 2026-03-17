@@ -11,11 +11,12 @@ interface CarCardProps {
     vendor?: string | null;
   };
   dueCount?: number;
+  dueTypes?: string[];
   lastServiceDate?: string | null;
   totalRecords?: number;
 }
 
-export default function CarCard({ car, dueCount, lastServiceDate, totalRecords }: CarCardProps) {
+export default function CarCard({ car, dueCount, dueTypes, lastServiceDate, totalRecords }: CarCardProps) {
   return (
     <div className="card" style={{ position: "relative" }}>
       {dueCount != null && dueCount > 0 && (
@@ -48,6 +49,12 @@ export default function CarCard({ car, dueCount, lastServiceDate, totalRecords }
           {totalRecords !== undefined && totalRecords > 0 && `${totalRecords} record${totalRecords !== 1 ? "s" : ""}`}
           {lastServiceDate && totalRecords !== undefined && totalRecords > 0 && " · "}
           {lastServiceDate && `Last: ${formatDate(lastServiceDate)}`}
+        </p>
+      )}
+      {dueTypes && dueTypes.length > 0 && (
+        <p className="text-sm" style={{ color: "#92400e", marginTop: "0.25rem" }}>
+          ⚠️ Due: {dueTypes.slice(0, 3).map(t => t.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())).join(", ")}
+          {dueTypes.length > 3 ? ` +${dueTypes.length - 3} more` : ""}
         </p>
       )}
       <div className="mt-2">

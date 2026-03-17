@@ -53,7 +53,9 @@ function NavBar({ isLoggedIn }: { isLoggedIn: boolean }) {
       <div className={`nav-links${menuOpen ? " nav-open" : ""}`}>
         {isLoggedIn ? (
           <>
+            <a href="/" onClick={() => setMenuOpen(false)}>Dashboard</a>
             <a href="/cars" onClick={() => setMenuOpen(false)}>My Cars</a>
+            <a href="/maintenance" onClick={() => setMenuOpen(false)}>History</a>
             <a href="/settings" onClick={() => setMenuOpen(false)}>Settings</a>
             <a href="/profile" onClick={() => setMenuOpen(false)}>Profile</a>
             <Form method="post" action="/logout" style={{ display: "inline" }}>

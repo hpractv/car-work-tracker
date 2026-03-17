@@ -3,7 +3,7 @@ import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Link, useRouteError, isRouteErrorResponse } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { getCarsForUser } from "~/models/car.server";
-import { getMaintenanceDue } from "~/models/maintenance.server";
+import { getBatchMaintenanceDue } from "~/models/maintenance.server";
 import { db } from "~/db.server";
 import CarCard from "~/components/CarCard";
 import { formatCurrency } from "~/utils/format";
@@ -43,17 +43,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     recordCountsByCarId.set(group.carId, group._count.id);
   }
 
-  const carsWithDue = await Promise.all(
-    cars.map(async (car) => {
-      const due = await getMaintenanceDue(car.id, car.currentMileage);
-      return {
-        car,
-        dueCount: due.length,
-        lastServiceDate: lastRecordsByCarId.get(car.id) ?? null,
-        totalRecords: recordCountsByCarId.get(car.id) ?? 0,
-      };
-    })
+  const dueMap = await getBatchMaintenanceDue(
+    cars.map((c) => ({ id: c.id, currentMileage: c.currentMileage }))
   );
+
+  const carsWithDue = cars.map((car) => ({
+    car,
+    dueCount: (dueMap.get(car.id) ?? []).length,
+    dueTypes: (dueMap.get(car.id) ?? []).map((d) => d.type),
+    lastServiceDate: lastRecordsByCarId.get(car.id) ?? null,
+    totalRecords: recordCountsByCarId.get(car.id) ?? 0,
+  }));
 
   let totalRecords = 0;
   let totalCost = 0;
@@ -87,9 +87,16 @@ export default function CarsIndex() {
     <div>
       <div className="page-header">
         <h1>My Cars</h1>
-        <Link to="/cars/new" className="btn btn-primary">
-          + Add Car
-        </Link>
+        <div className="flex gap-sm" style={{ flexWrap: "wrap" }}>
+          {carsWithDue.length > 0 && (
+            <a href="/cars/export" className="btn btn-secondary">
+              ⬇ Export All
+            </a>
+          )}
+          <Link to="/cars/new" className="btn btn-primary">
+            + Add Car
+          </Link>
+        </div>
       </div>
 
       {carsWithDue.length === 0 ? (
@@ -133,8 +140,8 @@ export default function CarsIndex() {
             <p className="text-muted">No cars match your search.</p>
           ) : (
             <div className="grid">
-              {filteredCars.map(({ car, dueCount, lastServiceDate, totalRecords }) => (
-                <CarCard key={car.id} car={car} dueCount={dueCount} lastServiceDate={lastServiceDate} totalRecords={totalRecords} />
+              {filteredCars.map(({ car, dueCount, dueTypes, lastServiceDate, totalRecords }) => (
+                <CarCard key={car.id} car={car} dueCount={dueCount} dueTypes={dueTypes} lastServiceDate={lastServiceDate} totalRecords={totalRecords} />
               ))}
             </div>
           )}

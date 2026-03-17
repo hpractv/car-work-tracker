@@ -145,6 +145,186 @@ export async function getMaintenanceDue(carId: string, currentMileage: number) {
   return due;
 }
 
+/**
+ * Batch version of getMaintenanceDue - loads all types and records in 2 queries
+ * instead of 2 queries per car. Returns a Map from carId to due items array.
+ */
+export async function getBatchMaintenanceDue(
+  cars: Array<{ id: string; currentMileage: number }>
+): Promise<Map<string, Array<{ type: string; reason: string; lastDate?: Date; lastMileage?: number }>>> {
+  if (cars.length === 0) return new Map();
+
+  const carIds = cars.map((c) => c.id);
+  const [types, records] = await Promise.all([
+    db.maintenanceType.findMany(),
+    db.maintenanceRecord.findMany({
+      where: { carId: { in: carIds } },
+      orderBy: { date: "desc" },
+    }),
+  ]);
+
+  // Group records by carId (already ordered desc, so first occurrence per type is most recent)
+  const recordsByCarId = new Map<string, typeof records>();
+  for (const record of records) {
+    if (!recordsByCarId.has(record.carId)) {
+      recordsByCarId.set(record.carId, []);
+    }
+    recordsByCarId.get(record.carId)!.push(record);
+  }
+
+  const result = new Map<
+    string,
+    Array<{ type: string; reason: string; lastDate?: Date; lastMileage?: number }>
+  >();
+  const now = new Date();
+
+  for (const car of cars) {
+    const carRecords = recordsByCarId.get(car.id) ?? [];
+    const due: Array<{ type: string; reason: string; lastDate?: Date; lastMileage?: number }> = [];
+
+    for (const mt of types) {
+      const lastRecord = carRecords.find((r) => r.type === mt.name);
+      if (!lastRecord) continue;
+
+      if (mt.defaultIntervalMiles) {
+        const milesSince = car.currentMileage - lastRecord.mileage;
+        if (milesSince >= mt.defaultIntervalMiles) {
+          due.push({
+            type: mt.name,
+            reason: `${milesSince.toLocaleString()} miles since last service (interval: ${mt.defaultIntervalMiles.toLocaleString()} miles)`,
+            lastDate: lastRecord.date,
+            lastMileage: lastRecord.mileage,
+          });
+          continue;
+        }
+      }
+
+      if (mt.defaultIntervalMonths) {
+        const monthsSince =
+          (now.getTime() - lastRecord.date.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        if (monthsSince >= mt.defaultIntervalMonths) {
+          due.push({
+            type: mt.name,
+            reason: `${Math.floor(monthsSince)} months since last service (interval: ${mt.defaultIntervalMonths} months)`,
+            lastDate: lastRecord.date,
+            lastMileage: lastRecord.mileage,
+          });
+          continue;
+        }
+      }
+    }
+
+    result.set(car.id, due);
+  }
+
+  return result;
+}
+
+/**
+ * Batch version of getMaintenanceApproaching - loads all types and records in 2 queries.
+ * Returns a Map from carId to approaching items array (60-99% of service interval).
+ */
+export async function getBatchMaintenanceApproaching(
+  cars: Array<{ id: string; currentMileage: number }>
+): Promise<
+  Map<
+    string,
+    Array<{
+      type: string;
+      overallPercent: number;
+      mileagePercent: number | null;
+      timePercent: number | null;
+      nextMileage: number | null;
+      nextDate: Date | null;
+    }>
+  >
+> {
+  if (cars.length === 0) return new Map();
+
+  const carIds = cars.map((c) => c.id);
+  const [types, records] = await Promise.all([
+    db.maintenanceType.findMany(),
+    db.maintenanceRecord.findMany({
+      where: { carId: { in: carIds } },
+      orderBy: { date: "desc" },
+    }),
+  ]);
+
+  const recordsByCarId = new Map<string, typeof records>();
+  for (const record of records) {
+    if (!recordsByCarId.has(record.carId)) {
+      recordsByCarId.set(record.carId, []);
+    }
+    recordsByCarId.get(record.carId)!.push(record);
+  }
+
+  const result = new Map<
+    string,
+    Array<{
+      type: string;
+      overallPercent: number;
+      mileagePercent: number | null;
+      timePercent: number | null;
+      nextMileage: number | null;
+      nextDate: Date | null;
+    }>
+  >();
+  const now = new Date();
+
+  for (const car of cars) {
+    const carRecords = recordsByCarId.get(car.id) ?? [];
+    const approaching: Array<{
+      type: string;
+      overallPercent: number;
+      mileagePercent: number | null;
+      timePercent: number | null;
+      nextMileage: number | null;
+      nextDate: Date | null;
+    }> = [];
+
+    for (const mt of types) {
+      const lastRecord = carRecords.find((r) => r.type === mt.name);
+      if (!lastRecord) continue;
+
+      const milesSinceLast = car.currentMileage - lastRecord.mileage;
+      const monthsSinceLast =
+        (now.getTime() - lastRecord.date.getTime()) / (1000 * 60 * 60 * 24 * 30);
+
+      let mileagePercent: number | null = null;
+      let timePercent: number | null = null;
+      let nextMileage: number | null = null;
+      let nextDate: Date | null = null;
+
+      if (mt.defaultIntervalMiles) {
+        mileagePercent = Math.min(
+          100,
+          Math.round((milesSinceLast / mt.defaultIntervalMiles) * 100)
+        );
+        nextMileage = lastRecord.mileage + mt.defaultIntervalMiles;
+      }
+      if (mt.defaultIntervalMonths) {
+        timePercent = Math.min(
+          100,
+          Math.round((monthsSinceLast / mt.defaultIntervalMonths) * 100)
+        );
+        const nextDateMs =
+          lastRecord.date.getTime() +
+          mt.defaultIntervalMonths * 30 * 24 * 60 * 60 * 1000;
+        nextDate = new Date(nextDateMs);
+      }
+
+      const overallPercent = Math.max(mileagePercent ?? 0, timePercent ?? 0);
+      if (overallPercent >= 60 && overallPercent < 100) {
+        approaching.push({ type: mt.name, overallPercent, mileagePercent, timePercent, nextMileage, nextDate });
+      }
+    }
+
+    result.set(car.id, approaching);
+  }
+
+  return result;
+}
+
 export async function getMaintenanceApproaching(
   carId: string,
   currentMileage: number

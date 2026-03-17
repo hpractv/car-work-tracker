@@ -38,8 +38,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const intent = formData.get("intent") as string;
 
   if (intent === "create") {
-    const name = (formData.get("name") as string | null)?.trim();
-    if (!name) return json({ error: "Name is required" }, { status: 400 });
+    const rawName = (formData.get("name") as string | null)?.trim();
+    if (!rawName) return json({ error: "Name is required" }, { status: 400 });
+    // Auto-sanitize: lowercase, replace spaces/dashes with underscores, strip special chars
+    const name = rawName.toLowerCase().replace(/[\s-]+/g, "_").replace(/[^a-z0-9_]/g, "");
+    if (!name) return json({ error: "Name must contain letters or numbers" }, { status: 400 });
     const milesRaw = formData.get("miles") as string | null;
     const monthsRaw = formData.get("months") as string | null;
     const defaultIntervalMiles = milesRaw ? parseInt(milesRaw, 10) || null : null;
@@ -57,8 +60,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "update") {
     const id = formData.get("id") as string;
-    const name = (formData.get("name") as string | null)?.trim();
-    if (!name) return json({ error: "Name is required" }, { status: 400 });
+    const rawName = (formData.get("name") as string | null)?.trim();
+    if (!rawName) return json({ error: "Name is required" }, { status: 400 });
+    // Auto-sanitize: lowercase, replace spaces/dashes with underscores, strip special chars
+    const name = rawName.toLowerCase().replace(/[\s-]+/g, "_").replace(/[^a-z0-9_]/g, "");
+    if (!name) return json({ error: "Name must contain letters or numbers" }, { status: 400 });
     const milesRaw = formData.get("miles") as string | null;
     const monthsRaw = formData.get("months") as string | null;
     const defaultIntervalMiles = milesRaw ? parseInt(milesRaw, 10) || null : null;
@@ -213,9 +219,12 @@ export default function Settings() {
             <input
               className="form-control"
               name="name"
-              placeholder="e.g. oil_change"
+              placeholder="e.g. Oil Change or oil_change"
               required
             />
+            <p className="text-muted" style={{ fontSize: "0.75rem", marginTop: "0.25rem" }}>
+              Spaces will be converted to underscores automatically.
+            </p>
           </div>
           <div style={{ flex: "0 1 100px" }}>
             <label className="form-label">Miles</label>

@@ -103,7 +103,15 @@ export default function CarMembers() {
                           </select>
                           <button type="submit" className="btn btn-secondary btn-sm">Save</button>
                         </Form>
-                        <Form method="post" style={{ display: "inline" }}>
+                        <Form
+                          method="post"
+                          style={{ display: "inline" }}
+                          onSubmit={(e) => {
+                            if (!window.confirm(`Remove ${m.user.name ?? m.user.email} from this car?`)) {
+                              e.preventDefault();
+                            }
+                          }}
+                        >
                           <input type="hidden" name="intent" value="remove" />
                           <input type="hidden" name="memberId" value={m.id} />
                           <button type="submit" className="btn btn-danger btn-sm" disabled={isSubmitting}>{isSubmitting ? "..." : "Remove"}</button>

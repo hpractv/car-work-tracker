@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { formatMaintenanceType } from "~/utils/format";
 
+function mapsUrl(lat: number, lon: number, name: string): string {
+  // Prefer Google Maps as it's more widely used; fallback available via OSM
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}&center=${lat},${lon}`;
+}
+
 interface NearbyService {
   name: string;
   lat: number;
@@ -88,7 +93,7 @@ export default function NearbyServicesAlert({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
         <span>
           ⚠️ <strong>Maintenance due</strong> ({dueTypes}) — {services.length} service station{services.length !== 1 ? "s" : ""} nearby.{" "}
-          Nearest: <strong>"{nearest.name}"</strong> ({(nearest.distance / 1000).toFixed(1)} km away)
+          Nearest: <strong><a href={mapsUrl(nearest.lat, nearest.lon, nearest.name)} target="_blank" rel="noopener noreferrer" style={{ color: "#92400e" }}>"{nearest.name}"</a></strong> ({(nearest.distance / 1000).toFixed(1)} km away)
         </span>
         <button
           onClick={() => setShowList(!showList)}
@@ -100,9 +105,20 @@ export default function NearbyServicesAlert({
       {showList && (
         <ul style={{ margin: 0, padding: 0, listStyle: "none", width: "100%", borderTop: "1px solid #f59e0b", paddingTop: "0.5rem" }}>
           {displayServices.map((s, i) => (
-            <li key={i} style={{ display: "flex", justifyContent: "space-between", padding: "0.2rem 0", fontSize: "0.85rem" }}>
+            <li key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.2rem 0", fontSize: "0.85rem" }}>
               <span>{i + 1}. {s.name}</span>
-              <span style={{ color: "#92400e" }}>{(s.distance / 1000).toFixed(1)} km</span>
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                <span style={{ color: "#92400e" }}>{(s.distance / 1000).toFixed(1)} km</span>
+                <a
+                  href={mapsUrl(s.lat, s.lon, s.name)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary btn-sm"
+                  style={{ padding: "0.1rem 0.4rem", fontSize: "0.75rem" }}
+                >
+                  📍 Map
+                </a>
+              </div>
             </li>
           ))}
         </ul>

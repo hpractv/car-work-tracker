@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+const STORAGE_KEY = "car-tracker-install-dismissed";
+
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
@@ -8,7 +10,15 @@ interface BeforeInstallPromptEvent extends Event {
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(true); // Start as dismissed to avoid flash
+
+  // Load dismissed state from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) {
+      setDismissed(false);
+    }
+  }, []);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -27,7 +37,15 @@ export default function InstallPrompt() {
     if (choice.outcome === "accepted" || choice.outcome === "dismissed") {
       setDeferredPrompt(null);
       setDismissed(true);
+      // If accepted, don't show again (browser removes the event anyway)
+      // If dismissed by user, persist so we don't nag
+      localStorage.setItem(STORAGE_KEY, "1");
     }
+  };
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem(STORAGE_KEY, "1");
   };
 
   return (
@@ -39,7 +57,7 @@ export default function InstallPrompt() {
         </button>
         <button
           className="btn btn-secondary btn-sm"
-          onClick={() => setDismissed(true)}
+          onClick={handleDismiss}
         >
           Not now
         </button>

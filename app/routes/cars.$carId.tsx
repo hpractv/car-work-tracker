@@ -146,10 +146,15 @@ export default function CarDetail() {
     <div>
       <div className="page-header">
         <div>
-          <h1>
-            {car.year} {car.make} {car.model}
-          </h1>
-          <p className="text-muted">
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <h1 style={{ margin: 0 }}>
+              {car.year} {car.make} {car.model}
+            </h1>
+            <span className={`badge badge-${isOwner ? "owner" : "driver"}`}>
+              {isOwner ? "Owner" : "Driver"}
+            </span>
+          </div>
+          <p className="text-muted" style={{ marginTop: "0.25rem" }}>
             {formatMileage(car.currentMileage)}
             {car.vendor ? ` · ${car.vendor}` : ""}
           </p>
@@ -309,13 +314,22 @@ export default function CarDetail() {
               const barColor = percent >= 100 ? "#dc2626" : percent >= 80 ? "#f59e0b" : "#22c55e";
               return (
                 <div key={s.type} style={{ border: "1px solid #e2e8f0", borderRadius: "6px", padding: "0.75rem" }}>
-                  <div className="flex flex-between">
+                  <div className="flex flex-between" style={{ alignItems: "center" }}>
                     <span style={{ fontWeight: 600, fontSize: "0.9rem" }}>{formatMaintenanceType(s.type)}</span>
-                    {s.isDue && (
-                      <span style={{ background: "#fef3c7", color: "#92400e", borderRadius: "999px", padding: "0.1rem 0.45rem", fontSize: "0.7rem", fontWeight: 700 }}>
-                        DUE
-                      </span>
-                    )}
+                    <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
+                      {s.isDue && (
+                        <span style={{ background: "#fef3c7", color: "#92400e", borderRadius: "999px", padding: "0.1rem 0.45rem", fontSize: "0.7rem", fontWeight: 700 }}>
+                          DUE
+                        </span>
+                      )}
+                      <Link
+                        to={`/cars/${car.id}/maintenance/new?type=${encodeURIComponent(s.type)}`}
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: "0.7rem", padding: "0.1rem 0.4rem" }}
+                      >
+                        + Log
+                      </Link>
+                    </div>
                   </div>
                   {s.hasHistory ? (
                     <>
