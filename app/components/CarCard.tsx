@@ -1,5 +1,5 @@
 import { Link } from "@remix-run/react";
-import { formatDate } from "~/utils/format";
+import { formatDate, formatMaintenanceType } from "~/utils/format";
 
 interface CarCardProps {
   car: {
@@ -62,7 +62,7 @@ export default function CarCard({ car, imageUrl, dueCount, dueTypes, lastService
       )}
       {dueTypes && dueTypes.length > 0 && (
         <p className="text-sm" style={{ color: "#92400e", marginTop: "0.25rem" }}>
-          ⚠️ Due: {dueTypes.slice(0, 3).map(t => t.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())).join(", ")}
+          ⚠️ Due: {dueTypes.slice(0, 3).map(t => formatMaintenanceType(t)).join(", ")}
           {dueTypes.length > 3 ? ` +${dueTypes.length - 3} more` : ""}
         </p>
       )}

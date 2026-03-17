@@ -5,6 +5,10 @@ import { db } from "~/db.server";
 import { getCarsForUser } from "~/models/car.server";
 import { formatCurrency, formatDate, formatMaintenanceType } from "~/utils/format";
 
+export function meta() {
+  return [{ title: "Reports & Analytics — Car Work Tracker" }];
+}
+
 // ---------------------------------------------------------------------------
 // Loader
 // ---------------------------------------------------------------------------
@@ -53,6 +57,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       count: number;
       firstDate: Date | null;
       lastDate: Date | null;
+      minMileage: number | null;
+      maxMileage: number | null;
     }
   >();
 
@@ -64,6 +70,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       count: 0,
       firstDate: null,
       lastDate: null,
+      minMileage: null,
+      maxMileage: null,
     });
   }
 
@@ -76,9 +84,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const d = new Date(rec.date);
     if (!entry.firstDate || d < entry.firstDate) entry.firstDate = d;
     if (!entry.lastDate || d > entry.lastDate) entry.lastDate = d;
+    if (entry.minMileage === null || rec.mileage < entry.minMileage) entry.minMileage = rec.mileage;
+    if (entry.maxMileage === null || rec.mileage > entry.maxMileage) entry.maxMileage = rec.mileage;
   }
 
-  const byCar = Array.from(byCarMap.values()).sort((a, b) => b.totalCost - a.totalCost);
+  const byCar = Array.from(byCarMap.values()).map((entry) => ({
+    ...entry,
+    costPerMile:
+      entry.minMileage !== null && entry.maxMileage !== null && entry.maxMileage > entry.minMileage
+        ? entry.totalCost / (entry.maxMileage - entry.minMileage)
+        : null,
+  })).sort((a, b) => b.totalCost - a.totalCost);
 
   // ── Cost by maintenance type ─────────────────────────────────────────────
   const byTypeMap = new Map<string, { type: string; totalCost: number; count: number }>();
@@ -311,9 +327,13 @@ export default function ReportsIndex() {
               </tr>
             </thead>
             <tbody>
-              {yearOverYear.map((y) => {
+              {yearOverYear.map((y, i) => {
                 const avg = y.count > 0 ? y.totalCost / y.count : 0;
                 const pct = maxYearCost > 0 ? (y.totalCost / maxYearCost) * 100 : 0;
+                const pctChange =
+                  i > 0 && yearOverYear[i - 1].totalCost > 0
+                    ? ((y.totalCost - yearOverYear[i - 1].totalCost) / yearOverYear[i - 1].totalCost) * 100
+                    : null;
                 return (
                   <tr key={y.year} style={{ borderBottom: "1px solid #f1f5f9" }}>
                     <Td>
@@ -336,7 +356,14 @@ export default function ReportsIndex() {
                     </Td>
                     <Td align="right">{y.count}</Td>
                     <Td align="right">
-                      <strong>{formatCurrency(y.totalCost)}</strong>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+                        <strong>{formatCurrency(y.totalCost)}</strong>
+                        {pctChange !== null && (
+                          <span style={{ fontSize: "0.75rem", color: pctChange >= 0 ? "#dc2626" : "#16a34a" }}>
+                            {pctChange >= 0 ? "▲" : "▼"} {Math.abs(pctChange).toFixed(0)}% vs {yearOverYear[i - 1].year}
+                          </span>
+                        )}
+                      </div>
                     </Td>
                     <Td align="right">{formatCurrency(avg)}</Td>
                     <Td align="right">
@@ -366,8 +393,8 @@ export default function ReportsIndex() {
                 <Th align="right">Records</Th>
                 <Th align="right">Total Cost</Th>
                 <Th align="right">Avg / Service</Th>
-                <Th align="right">First Service</Th>
-                <Th align="right">Last Service</Th>
+                <Th align="right">Cost/Mile</Th>
+                <Th align="right">Date Range</Th>
               </tr>
             </thead>
             <tbody>
@@ -384,15 +411,17 @@ export default function ReportsIndex() {
                     </Td>
                     <Td align="right">{formatCurrency(avg)}</Td>
                     <Td align="right">
-                      {c.firstDate ? (
-                        <span className="text-muted">{formatDate(c.firstDate)}</span>
+                      {c.costPerMile != null ? (
+                        <span>${c.costPerMile.toFixed(3)}/mi</span>
                       ) : (
                         <span className="text-muted">—</span>
                       )}
                     </Td>
                     <Td align="right">
-                      {c.lastDate ? (
-                        <span className="text-muted">{formatDate(c.lastDate)}</span>
+                      {c.firstDate && c.lastDate ? (
+                        <span className="text-muted">
+                          {formatDate(c.firstDate)} – {formatDate(c.lastDate)}
+                        </span>
                       ) : (
                         <span className="text-muted">—</span>
                       )}

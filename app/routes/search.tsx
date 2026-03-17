@@ -11,10 +11,10 @@ export function meta() {
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const url = new URL(request.url);
-  const q = url.searchParams.get("q") ?? "";
+  const q = (url.searchParams.get("q") ?? "").trim();
 
   if (q.length < 2) {
-    return json({ results: { cars: [], records: [] }, query: q });
+    return json({ cars: [], records: [], query: q, totalCars: 0, totalRecords: 0 });
   }
 
   const memberRows = await db.carMember.findMany({
@@ -23,52 +23,61 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
   const carIds = memberRows.map((m) => m.carId);
 
-  const cars = await db.car.findMany({
-    where: {
-      AND: [
-        { members: { some: { userId } } },
-        {
-          OR: [
-            { make: { contains: q } },
-            { model: { contains: q } },
-            { vendor: { contains: q } },
-            { description: { contains: q } },
-          ],
-        },
-      ],
-    },
-    take: 10,
-  });
+  const carWhere = {
+    AND: [
+      { members: { some: { userId } } },
+      {
+        OR: [
+          { make: { contains: q } },
+          { model: { contains: q } },
+          { vendor: { contains: q } },
+          { description: { contains: q } },
+        ],
+      },
+    ],
+  };
 
-  const records =
+  const recordWhere =
     carIds.length > 0
-      ? await db.maintenanceRecord.findMany({
-          where: {
-            AND: [
-              { carId: { in: carIds } },
-              {
-                OR: [
-                  { type: { contains: q } },
-                  { vendor: { contains: q } },
-                  { description: { contains: q } },
-                ],
-              },
-            ],
-          },
-          include: {
-            car: { select: { id: true, make: true, model: true, year: true } },
-          },
-          orderBy: { date: "desc" },
-          take: 20,
-        })
-      : [];
+      ? {
+          AND: [
+            { carId: { in: carIds } },
+            {
+              OR: [
+                { type: { contains: q } },
+                { vendor: { contains: q } },
+                { description: { contains: q } },
+              ],
+            },
+          ],
+        }
+      : null;
 
-  return json({ results: { cars, records }, query: q });
+  const [cars, totalCars] = await Promise.all([
+    db.car.findMany({ where: carWhere, take: 10 }),
+    db.car.count({ where: carWhere }),
+  ]);
+
+  const records = recordWhere
+    ? await db.maintenanceRecord.findMany({
+        where: recordWhere,
+        include: {
+          car: { select: { id: true, make: true, model: true, year: true } },
+        },
+        orderBy: { date: "desc" },
+        take: 20,
+      })
+    : [];
+
+  const totalRecords = recordWhere
+    ? await db.maintenanceRecord.count({ where: recordWhere })
+    : 0;
+
+  return json({ cars, records, query: q, totalCars, totalRecords });
 }
 
 export default function SearchPage() {
-  const { results, query } = useLoaderData<typeof loader>();
-  const { cars, records } = results;
+  const { cars, records, query, totalCars, totalRecords } = useLoaderData<typeof loader>();
   const hasResults = cars.length > 0 || records.length > 0;
 
   return (
@@ -108,13 +117,16 @@ export default function SearchPage() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           <p className="text-muted text-sm">
-            Found {cars.length} car{cars.length !== 1 ? "s" : ""} and {records.length} record
-            {records.length !== 1 ? "s" : ""} matching &ldquo;{query}&rdquo;
+            Showing {cars.length} of {totalCars} car{totalCars !== 1 ? "s" : ""} and{" "}
+            {records.length} of {totalRecords} record
+            {totalRecords !== 1 ? "s" : ""} matching &ldquo;{query}&rdquo;
           </p>
 
           {cars.length > 0 && (
             <div className="card">
-              <h2 style={{ marginBottom: "0.75rem" }}>🚗 Cars ({cars.length})</h2>
+              <h2 style={{ marginBottom: "0.75rem" }}>
+                🚗 Cars ({cars.length}{totalCars > cars.length ? ` of ${totalCars}` : ""})
+              </h2>
               {cars.map((car) => (
                 <div
                   key={car.id}
@@ -151,7 +163,9 @@ export default function SearchPage() {
 
           {records.length > 0 && (
             <div className="card">
-              <h2 style={{ marginBottom: "0.75rem" }}>🔧 Maintenance Records ({records.length})</h2>
+              <h2 style={{ marginBottom: "0.75rem" }}>
+                🔧 Maintenance Records ({records.length}{totalRecords > records.length ? ` of ${totalRecords}` : ""})
+              </h2>
               {records.map((record) => (
                 <div
                   key={record.id}

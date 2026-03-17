@@ -216,3 +216,18 @@ A global `/maintenance` route that shows all records across all user cars is val
 ## Auto-Sanitizing User Input for Technical Field Names
 
 When a field (like maintenance type name) is used as a technical identifier (stored as `oil_change`, used in URL params), auto-sanitize on the server: `rawName.toLowerCase().replace(/[\s-]+/g, "_").replace(/[^a-z0-9_]/g, "")`. This lets users type "Oil Change" naturally while storing the canonical form. Always validate the sanitized result is non-empty.
+## Print Routes as Standalone HTML Documents
+
+When creating a print-friendly route in Remix, return a full `<html>` document from the component (not an Outlet-rendered page). This bypasses the root.tsx layout entirely. Use `@media print { .no-print { display: none } }` CSS to hide the print/back buttons when the user actually prints. Opening the route with `target="_blank"` gives the user a clean print preview tab.
+
+## Server-Side Filtering/Pagination vs Client-Side
+
+For global history pages with potentially large datasets, server-side Prisma filtering is better than client-side useMemo. Build the Prisma `where` clause dynamically from URL search params. Use `db.maintenanceRecord.count({ where })` for totals, then `findMany({ where, skip, take })` for the current page. This scales to thousands of records without sending them all to the browser.
+
+## Root Loader Due Count Badge Pattern
+
+To show a notification badge in the navbar, add the due-count computation directly in the root loader (inline Prisma queries, not imported from server modules). Wrap in try/catch so a DB error never breaks navigation. Initialize `dueCount = 0` and increment it per due type across all cars. Pass it to the NavBar component as a prop and render conditionally with a red pill badge.
+
+## Analytics Pages with Pure CSS Bar Charts
+
+For simple analytics visualizations, avoid external charting libraries. Use `<div>` elements with `width: X%` and `background: color` to render horizontal bars. Calculate `width = (value / maxValue) * 100`. For vertical bars, use `height` instead and a flex column-reverse container. This works offline (no CDN), renders SSR, and prints cleanly.

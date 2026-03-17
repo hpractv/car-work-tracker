@@ -8,6 +8,10 @@ import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/re
 import { requireUserId, getSession, sessionStorage } from "~/session.server";
 import { getUserById, getUserByEmail, updateUserProfile, updateUserPassword, deleteUser } from "~/models/user.server";
 
+export function meta() {
+  return [{ title: "My Profile — Car Work Tracker" }];
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const user = await getUserById(userId);
@@ -88,7 +92,12 @@ export default function Profile() {
   return (
     <div style={{ maxWidth: "600px" }}>
       <div className="page-header">
-        <h1>Account Settings</h1>
+        <div>
+          <h1>Account Settings</h1>
+          <p className="text-muted text-sm" style={{ marginTop: "0.25rem" }}>
+            Member since: {new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+          </p>
+        </div>
         <a href="/" className="btn btn-secondary">← Dashboard</a>
       </div>
 

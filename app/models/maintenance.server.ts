@@ -92,6 +92,10 @@ export async function deleteMaintenanceType(id: string) {
   return db.maintenanceType.delete({ where: { id } });
 }
 
+function monthsDiff(from: Date, to: Date): number {
+  return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+}
+
 export async function getMaintenanceDue(carId: string, currentMileage: number) {
   const types = await db.maintenanceType.findMany();
   const records = await db.maintenanceRecord.findMany({
@@ -130,8 +134,7 @@ export async function getMaintenanceDue(carId: string, currentMileage: number) {
 
     // Check time interval
     if (mt.defaultIntervalMonths && lastRecord) {
-      const monthsSince =
-        (now.getTime() - lastRecord.date.getTime()) / (1000 * 60 * 60 * 24 * 30);
+      const monthsSince = monthsDiff(lastRecord.date, now);
       if (monthsSince >= mt.defaultIntervalMonths) {
         due.push({
           type: mt.name,
@@ -202,12 +205,11 @@ export async function getBatchMaintenanceDue(
       }
 
       if (mt.defaultIntervalMonths) {
-        const monthsSince =
-          (now.getTime() - lastRecord.date.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        const monthsSince = monthsDiff(lastRecord.date, now);
         if (monthsSince >= mt.defaultIntervalMonths) {
           due.push({
             type: mt.name,
-            reason: `${Math.floor(monthsSince)} months since last service (interval: ${mt.defaultIntervalMonths} months)`,
+            reason: `${monthsSince} months since last service (interval: ${mt.defaultIntervalMonths} months)`,
             lastDate: lastRecord.date,
             lastMileage: lastRecord.mileage,
           });
@@ -289,8 +291,7 @@ export async function getBatchMaintenanceApproaching(
       if (!lastRecord) continue;
 
       const milesSinceLast = car.currentMileage - lastRecord.mileage;
-      const monthsSinceLast =
-        (now.getTime() - lastRecord.date.getTime()) / (1000 * 60 * 60 * 24 * 30);
+      const monthsSinceLast = monthsDiff(lastRecord.date, now);
 
       let mileagePercent: number | null = null;
       let timePercent: number | null = null;
@@ -309,10 +310,9 @@ export async function getBatchMaintenanceApproaching(
           100,
           Math.round((monthsSinceLast / mt.defaultIntervalMonths) * 100)
         );
-        const nextDateMs =
-          lastRecord.date.getTime() +
-          mt.defaultIntervalMonths * 30 * 24 * 60 * 60 * 1000;
-        nextDate = new Date(nextDateMs);
+        const nextDueDate = new Date(lastRecord.date);
+        nextDueDate.setMonth(nextDueDate.getMonth() + mt.defaultIntervalMonths);
+        nextDate = nextDueDate;
       }
 
       const overallPercent = Math.max(mileagePercent ?? 0, timePercent ?? 0);
@@ -373,7 +373,7 @@ export async function getServiceIntervalStatus(carId: string, currentMileage: nu
 
     if (lastRecord) {
       milesSinceLast = currentMileage - lastRecord.mileage;
-      monthsSinceLast = (now.getTime() - lastRecord.date.getTime()) / (1000 * 60 * 60 * 24 * 30);
+      monthsSinceLast = monthsDiff(lastRecord.date, now);
       
       if (mt.defaultIntervalMiles) {
         mileagePercent = Math.min(100, Math.round((milesSinceLast / mt.defaultIntervalMiles) * 100));
@@ -381,8 +381,9 @@ export async function getServiceIntervalStatus(carId: string, currentMileage: nu
       }
       if (mt.defaultIntervalMonths) {
         timePercent = Math.min(100, Math.round((monthsSinceLast / mt.defaultIntervalMonths) * 100));
-        const nextDateMs = lastRecord.date.getTime() + mt.defaultIntervalMonths * 30 * 24 * 60 * 60 * 1000;
-        nextDate = new Date(nextDateMs);
+        const nextDueDate = new Date(lastRecord.date);
+        nextDueDate.setMonth(nextDueDate.getMonth() + mt.defaultIntervalMonths);
+        nextDate = nextDueDate;
       }
     }
 
@@ -409,4 +410,67 @@ export async function getServiceIntervalStatus(carId: string, currentMileage: nu
       hasHistory: !!lastRecord,
     };
   });
+}
+
+export async function getMaintenanceForecast(
+  carId: string,
+  currentMileage: number
+): Promise<Array<{
+  typeId: string;
+  typeName: string;
+  nextDueMileage: number | null;
+  nextDueDate: Date | null;
+  intervalMiles: number | null;
+  intervalMonths: number | null;
+  lastRecordDate: Date | null;
+  lastRecordMileage: number | null;
+}>> {
+  const types = await db.maintenanceType.findMany({ orderBy: { name: "asc" } });
+  const records = await db.maintenanceRecord.findMany({
+    where: { carId },
+    orderBy: { date: "desc" },
+  });
+
+  const forecast: Array<{
+    typeId: string;
+    typeName: string;
+    nextDueMileage: number | null;
+    nextDueDate: Date | null;
+    intervalMiles: number | null;
+    intervalMonths: number | null;
+    lastRecordDate: Date | null;
+    lastRecordMileage: number | null;
+  }> = [];
+
+  for (const mt of types) {
+    const hasInterval = mt.defaultIntervalMiles !== null || mt.defaultIntervalMonths !== null;
+    if (!hasInterval) continue;
+
+    const lastRecord = records.find((r) => r.type === mt.name);
+    if (!lastRecord) continue;
+
+    let nextDueMileage: number | null = null;
+    let nextDueDate: Date | null = null;
+
+    if (mt.defaultIntervalMiles !== null) {
+      nextDueMileage = lastRecord.mileage + mt.defaultIntervalMiles;
+    }
+    if (mt.defaultIntervalMonths !== null) {
+      nextDueDate = new Date(lastRecord.date);
+      nextDueDate.setMonth(nextDueDate.getMonth() + mt.defaultIntervalMonths);
+    }
+
+    forecast.push({
+      typeId: mt.id,
+      typeName: mt.name,
+      nextDueMileage,
+      nextDueDate,
+      intervalMiles: mt.defaultIntervalMiles,
+      intervalMonths: mt.defaultIntervalMonths,
+      lastRecordDate: lastRecord.date,
+      lastRecordMileage: lastRecord.mileage,
+    });
+  }
+
+  return forecast;
 }

@@ -8,6 +8,10 @@ import { db } from "~/db.server";
 import CarCard from "~/components/CarCard";
 import { formatCurrency } from "~/utils/format";
 
+export function meta() {
+  return [{ title: "My Cars — Car Work Tracker" }];
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const cars = await getCarsForUser(userId);

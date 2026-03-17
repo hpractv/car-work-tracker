@@ -24,49 +24,50 @@ export const links: LinksFunction = () => [
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await getUserId(request);
+  if (!userId) {
+    return json({ isLoggedIn: false, userName: null, dueCount: 0 });
+  }
   let dueCount = 0;
-  if (userId) {
-    try {
-      const cars = await db.car.findMany({
-        where: { members: { some: { userId } } },
-        select: { id: true, currentMileage: true },
-      });
-      if (cars.length > 0) {
-        const carIds = cars.map(c => c.id);
-        const [types, records] = await Promise.all([
-          db.maintenanceType.findMany(),
-          db.maintenanceRecord.findMany({
-            where: { carId: { in: carIds } },
-            orderBy: { date: "desc" },
-            select: { carId: true, type: true, date: true, mileage: true },
-          }),
-        ]);
-        const recordsByCarId = new Map<string, typeof records>();
-        for (const record of records) {
-          if (!recordsByCarId.has(record.carId)) recordsByCarId.set(record.carId, []);
-          recordsByCarId.get(record.carId)!.push(record);
-        }
-        const now = new Date();
-        for (const car of cars) {
-          const carRecords = recordsByCarId.get(car.id) ?? [];
-          for (const mt of types) {
-            if (!mt.defaultIntervalMiles && !mt.defaultIntervalMonths) continue;
-            const lastRecord = carRecords.find(r => r.type === mt.name);
-            if (!lastRecord) continue;
-            if (mt.defaultIntervalMiles && (car.currentMileage - lastRecord.mileage) >= mt.defaultIntervalMiles) {
-              dueCount++;
-            } else if (mt.defaultIntervalMonths) {
-              const monthsSince = (now.getTime() - new Date(lastRecord.date).getTime()) / (1000 * 60 * 60 * 24 * 30);
-              if (monthsSince >= mt.defaultIntervalMonths) dueCount++;
-            }
+  try {
+    const cars = await db.car.findMany({
+      where: { members: { some: { userId } } },
+      select: { id: true, currentMileage: true },
+    });
+    if (cars.length > 0) {
+      const carIds = cars.map(c => c.id);
+      const [types, records] = await Promise.all([
+        db.maintenanceType.findMany(),
+        db.maintenanceRecord.findMany({
+          where: { carId: { in: carIds } },
+          orderBy: { date: "desc" },
+          select: { carId: true, type: true, date: true, mileage: true },
+        }),
+      ]);
+      const recordsByCarId = new Map<string, typeof records>();
+      for (const record of records) {
+        if (!recordsByCarId.has(record.carId)) recordsByCarId.set(record.carId, []);
+        recordsByCarId.get(record.carId)!.push(record);
+      }
+      const now = new Date();
+      for (const car of cars) {
+        const carRecords = recordsByCarId.get(car.id) ?? [];
+        for (const mt of types) {
+          if (!mt.defaultIntervalMiles && !mt.defaultIntervalMonths) continue;
+          const lastRecord = carRecords.find(r => r.type === mt.name);
+          if (!lastRecord) continue;
+          if (mt.defaultIntervalMiles && (car.currentMileage - lastRecord.mileage) >= mt.defaultIntervalMiles) {
+            dueCount++;
+          } else if (mt.defaultIntervalMonths) {
+            const monthsSince = (now.getTime() - new Date(lastRecord.date).getTime()) / (1000 * 60 * 60 * 24 * 30);
+            if (monthsSince >= mt.defaultIntervalMonths) dueCount++;
           }
         }
       }
-    } catch {
-      dueCount = 0;
     }
+  } catch {
+    dueCount = 0;
   }
-  return json({ isLoggedIn: !!userId, dueCount });
+  return json({ isLoggedIn: true, userName: null, dueCount });
 }
 
 export function meta() {
@@ -116,6 +117,7 @@ function NavBar({ isLoggedIn, dueCount }: { isLoggedIn: boolean; dueCount: numbe
             </a>
             <a href="/cars" onClick={() => setMenuOpen(false)}>My Cars</a>
             <a href="/maintenance" onClick={() => setMenuOpen(false)}>History</a>
+            <a href="/search" onClick={() => setMenuOpen(false)}>Search</a>
             <a href="/reports" onClick={() => setMenuOpen(false)}>Reports</a>
             <a href="/settings" onClick={() => setMenuOpen(false)}>Settings</a>
             <a href="/profile" onClick={() => setMenuOpen(false)}>Profile</a>
@@ -145,6 +147,7 @@ function NavBar({ isLoggedIn, dueCount }: { isLoggedIn: boolean; dueCount: numbe
             <a href="/signup" onClick={() => setMenuOpen(false)}>Sign Up</a>
           </>
         )}
+        <OfflineIndicator />
       </div>
     </nav>
   );
@@ -167,7 +170,6 @@ export default function App() {
         <main className="container">
           <Outlet />
         </main>
-        <OfflineIndicator />
         <ScrollRestoration />
         <Scripts />
         <script src="/registerSW.js" />

@@ -7,6 +7,10 @@ import { getCarById, updateCarMileage } from "~/models/car.server";
 import { getMaintenanceDue, getServiceIntervalStatus } from "~/models/maintenance.server";
 import MaintenanceList from "~/components/MaintenanceList";
 
+export function meta() {
+  return [{ title: "Car Details — Car Work Tracker" }];
+}
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const car = await getCarById(params.carId!, userId);
@@ -17,7 +21,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const userMembership = car.members.find((m) => m.userId === userId);
   const isOwner = userMembership?.role === "owner";
 
-  return json({ car, due, isOwner, intervalStatus });
+  // Derive forecast (next due mileage/date) from interval status
+  const forecast = Object.fromEntries(
+    intervalStatus
+      .filter((s) => s.nextMileage != null || s.nextDate != null)
+      .map((s) => [
+        s.type,
+        {
+          nextDueMileage: s.nextMileage ?? undefined,
+          nextDueDate: s.nextDate ?? undefined,
+        },
+      ])
+  );
+
+  return json({ car, due, isOwner, intervalStatus, forecast });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -61,7 +78,7 @@ function sortRecords(
 }
 
 export default function CarDetail() {
-  const { car, due, isOwner, intervalStatus } = useLoaderData<typeof loader>();
+  const { car, due, isOwner, intervalStatus, forecast } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
@@ -96,6 +113,10 @@ export default function CarDetail() {
       return acc;
     }, {});
   const costEntries = Object.entries(costByType).sort((a, b) => b[1].total - a[1].total);
+
+  const minRecordMileage = car.maintenanceRecords.length > 0 ? Math.min(...car.maintenanceRecords.map((r) => r.mileage)) : null;
+  const maxRecordMileage = car.maintenanceRecords.length > 0 ? Math.max(...car.maintenanceRecords.map((r) => r.mileage)) : null;
+  const mileageSpan = minRecordMileage !== null && maxRecordMileage !== null && maxRecordMileage > minRecordMileage ? maxRecordMileage - minRecordMileage : null;
 
   // Monthly spending computation
   const monthlySpending = (() => {
@@ -227,6 +248,12 @@ export default function CarDetail() {
                     <tr>
                       <th>Total Spent</th>
                       <td>{formatCurrency(car.maintenanceRecords.filter((r) => r.cost != null).reduce((s, r) => s + (r.cost ?? 0), 0))}</td>
+                    </tr>
+                  )}
+                  {mileageSpan != null && mileageSpan > 0 && (
+                    <tr>
+                      <th>Miles Tracked</th>
+                      <td>{mileageSpan.toLocaleString()} mi</td>
                     </tr>
                   )}
                 </>
@@ -381,6 +408,15 @@ export default function CarDetail() {
                             <p className="text-sm text-muted" style={{ marginTop: "0.25rem" }}>Due by {formatDate(s.nextDate)}</p>
                           )}
                         </div>
+                      )}
+                      {forecast[s.type] && (
+                        <p className="text-sm text-muted" style={{ marginTop: "0.4rem", fontStyle: "italic" }}>
+                          {forecast[s.type].nextDueMileage != null
+                            ? `Next due: ~${formatMileage(forecast[s.type].nextDueMileage!)} mi`
+                            : forecast[s.type].nextDueDate != null
+                            ? `Next due: ~${formatDate(forecast[s.type].nextDueDate!)}`
+                            : null}
+                        </p>
                       )}
                     </>
                   ) : (

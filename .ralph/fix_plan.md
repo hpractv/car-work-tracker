@@ -125,17 +125,31 @@
 - [x] Confirm dialog before removing a car member
 - [x] Auto-sanitize maintenance type names to snake_case in settings create/update
 
-## 🔧 Phase 14: Loop 9 Tasks (In Progress)
-- [ ] Add Car imageUrl + notes fields to Prisma schema, forms, CarCard, and car detail
-- [ ] Add MaintenanceRecord receiptUrl field to Prisma schema, forms, and display
-- [ ] Create /reports route with year-over-year cost comparison and HTML bar chart
-- [ ] Add date range filter (from/to) on /maintenance history page
-- [ ] Add server-side pagination to /maintenance history (replace client-side)
-- [ ] Add navbar notification badge showing count of due maintenance items
-- [ ] Add Reports link to authenticated navbar
-- [ ] Add printable maintenance history report per car (print button + CSS)
-- [ ] Add global search route /search (across cars and records)
-- [ ] Add v3_singleFetch future flag with proper loader type migration
+## ✅ Completed - Phase 14: Loop 9 Features
+- [x] Add Car imageUrl + notes fields to Prisma schema, forms, CarCard, and car detail
+- [x] Add MaintenanceRecord receiptUrl field to Prisma schema, forms, and display
+- [x] Create /reports route with year-over-year cost comparison and HTML bar chart
+- [x] Add date range filter (from/to) on /maintenance history page
+- [x] Add server-side pagination to /maintenance history (replace client-side)
+- [x] Add navbar notification badge showing count of due maintenance items
+- [x] Add Reports link to authenticated navbar
+- [x] Add printable maintenance history report per car (print button + CSS)
+- [x] Add global search route /search (across cars and records)
+
+## 🔧 In Progress - Phase 15: Loop 10 Bug Fixes & Enhancements
+
+- [ ] Fix date range off-by-one in maintenance._index.tsx (use lt + next day instead of lte + 23:59:59)
+- [ ] Fix type filter partial match in maintenance._index.tsx (use exact equals, not contains)
+- [ ] Improve maintenance history UX: aria-sort, clear filtered vs total labels
+- [ ] Fix search.tsx: trim whitespace before length check, show total count with truncation notice
+- [ ] Optimize root.tsx loader: skip due count for unauthenticated users
+- [ ] Add OfflineIndicator to root.tsx navbar
+- [ ] Fix NearbyServicesAlert: move setLoading(false) to finally block, catch .json() parse errors
+- [ ] Enhance reports: add YoY % change labels, fix division by zero on cost/mile
+- [ ] Fix maintenance.server.ts month math: use accurate getFullYear/getMonth diff instead of 30-day ms approximation
+- [ ] Add getMaintenanceForecast() to maintenance.server.ts
+- [ ] Add maintenance forecasting to cars.$carId.tsx service schedule cards
+- [ ] Fix car.server.ts: email format validation in addCarMember, negative mileage guard
 
 ## 📋 Future Improvements
 - [ ] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration

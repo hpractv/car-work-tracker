@@ -176,4 +176,27 @@ Notable findings:
 - Batch query optimization reduces dashboard/cars-list DB queries from 2N to 2 for due/approaching maintenance checks
 - Global /maintenance route adds cross-fleet visibility with filter/sort/search
 - Cars.export.tsx adds fleet-wide CSV; separate from per-car export
-- All service schedule cards now have inline + Log buttons for quick service logging
+- All service schedule cards now have inline + Log buttons for quick service logging---
+[2026-03-17] Loop 9
+
+Tasks Attempted:
+- Add Car imageUrl + notes fields (Prisma schema + db push + forms + CarCard + detail)
+- Add MaintenanceRecord receiptUrl field (schema + forms + MaintenanceList display)
+- Create /reports analytics route (year-over-year, cost by car, cost by type, monthly trend)
+- Date range filter + server-side pagination on /maintenance history
+- Navbar notification badge (due count) + Reports link in nav
+- Printable maintenance report per car (/cars/:id/print route + Print Report button)
+- Global search route /search (cars + maintenance records)
+
+Tasks Completed: ✅ All 7 (covering 9 fix_plan items)
+
+Build result: npm run build ✅ exit code 0 — 135 client modules + 38 SSR modules + PWA service worker (36 precached entries)
+TypeCheck: npm run typecheck ✅ exit code 0
+
+Notable findings:
+- Prisma schema added: Car.imageUrl, Car.notes, MaintenanceRecord.receiptUrl — all optional String fields
+- Reports page uses pure HTML/CSS bar charts (no external charting libraries) for year-over-year and monthly trends
+- /maintenance history switched from client-side sort/filter to server-side Prisma queries with pagination
+- Print route (/cars/:id/print) returns a full standalone HTML document (bypasses Remix root layout)
+- Root loader now computes due maintenance count for navbar badge using inline Prisma queries
+- Global /search route supports searching cars + records with SQLite contains (case-insensitive)

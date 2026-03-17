@@ -5,6 +5,10 @@ import { getCarsForUser } from "~/models/car.server";
 import { db } from "~/db.server";
 import { formatMaintenanceType, formatDate, formatCurrency, formatMileage } from "~/utils/format";
 
+export function meta() {
+  return [{ title: "Maintenance History — Car Work Tracker" }];
+}
+
 const PAGE_SIZE = 25;
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -58,11 +62,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     : { carId: { in: carIds } };
 
   if (typeFilter) {
-    where.type = { contains: typeFilter };
+    where.type = typeFilter;
   }
 
   if (dateFrom || dateTo) {
-    const dateCondition: { gte?: Date; lte?: Date } = {};
+    const dateCondition: { gte?: Date; lt?: Date } = {};
     if (dateFrom) {
       const d = new Date(dateFrom);
       if (!isNaN(d.getTime())) dateCondition.gte = d;
@@ -70,8 +74,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (dateTo) {
       const d = new Date(dateTo);
       if (!isNaN(d.getTime())) {
-        d.setHours(23, 59, 59, 999);
-        dateCondition.lte = d;
+        d.setDate(d.getDate() + 1); // exclusive upper bound
+        d.setHours(0, 0, 0, 0);
+        dateCondition.lt = d;
       }
     }
     if (Object.keys(dateCondition).length > 0) {
@@ -216,7 +221,9 @@ export default function MaintenanceIndex() {
             {totalCost > 0 && (
               <div>
                 <strong>{formatCurrency(totalCost)}</strong>
-                <span className="text-muted text-sm" style={{ marginLeft: "0.35rem" }}>total spent</span>
+                <span className="text-muted text-sm" style={{ marginLeft: "0.35rem" }}>
+                  total cost for {totalCount} matched record{totalCount !== 1 ? "s" : ""} (all pages)
+                </span>
               </div>
             )}
             <div>
@@ -312,7 +319,7 @@ export default function MaintenanceIndex() {
                 <table style={{ margin: 0 }}>
                   <thead>
                     <tr>
-                      <th>
+                      <th aria-sort={sortField === "date" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
                         <a href={buildSortUrl("date")} style={sortLinkStyle}>
                           Date{sortIcon("date")}
                         </a>
@@ -320,17 +327,17 @@ export default function MaintenanceIndex() {
                       {cars.length > 1 && (
                         <th style={{ fontSize: "0.85rem", color: "#64748b" }}>Car</th>
                       )}
-                      <th>
+                      <th aria-sort={sortField === "type" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
                         <a href={buildSortUrl("type")} style={sortLinkStyle}>
                           Service Type{sortIcon("type")}
                         </a>
                       </th>
-                      <th>
+                      <th aria-sort={sortField === "mileage" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
                         <a href={buildSortUrl("mileage")} style={sortLinkStyle}>
                           Mileage{sortIcon("mileage")}
                         </a>
                       </th>
-                      <th>
+                      <th aria-sort={sortField === "cost" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
                         <a href={buildSortUrl("cost")} style={sortLinkStyle}>
                           Cost{sortIcon("cost")}
                         </a>
@@ -390,7 +397,7 @@ export default function MaintenanceIndex() {
               {page > 1 && (
                 <a href={buildPageUrl(page - 1)} className="btn btn-secondary btn-sm">&larr; Prev</a>
               )}
-              <span className="text-muted text-sm">Page {page} of {totalPages} ({totalCount} records)</span>
+              <span className="text-muted text-sm">Page {page} of {totalPages} ({totalCount} total records)</span>
               {page < totalPages && (
                 <a href={buildPageUrl(page + 1)} className="btn btn-primary btn-sm">Next &rarr;</a>
               )}

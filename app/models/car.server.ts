@@ -90,6 +90,11 @@ export async function addCarMember(
   });
   if (!requester) throw new Error("Only owners can add members");
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new Error("Invalid email address format");
+  }
+
   const targetUser = await db.user.findUnique({ where: { email } });
   if (!targetUser) throw new Error("No user found with that email");
 
@@ -138,6 +143,7 @@ export async function updateCarMemberRole(
 }
 
 export async function updateCarMileage(carId: string, newMileage: number, userId: string) {
+  if (newMileage < 0) throw new Error("Mileage cannot be negative");
   const membership = await db.carMember.findFirst({
     where: { carId, userId },
   });

@@ -25,44 +25,43 @@ export default function NearbyServicesAlert({
   const [error, setError] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
   const [showList, setShowList] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (maintenanceDue.length === 0) return;
     if (!navigator.geolocation) return;
 
-    setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const { latitude, longitude } = pos.coords;
-          const res = await fetch(
-            `/api/nearby-services?lat=${latitude}&lon=${longitude}&radius=5000`
-          );
-          if (res.ok) {
-            const data = await res.json();
-            setServices(data);
-          }
-        } catch {
-          setError("Could not fetch nearby services");
-        } finally {
-          setLoading(false);
-          setChecked(true);
-        }
-      },
-      (err) => {
-        setLoading(false);
-        setChecked(true);
-        if (err.code === 1) {
+    const fetchNearby = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
+        );
+        const { latitude, longitude } = pos.coords;
+        const res = await fetch(
+          `/api/nearby-services?lat=${latitude}&lon=${longitude}&radius=5000`
+        );
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const data = await res.json(); // this can throw
+        setServices(data);
+      } catch (err) {
+        const geoErr = err as { code?: number };
+        if (geoErr.code === 1) {
           setError("Location access denied — enable location to find nearby service stations");
-        } else if (err.code === 2) {
+        } else if (geoErr.code === 2) {
           setError("Location unavailable");
         } else {
-          setError("Could not determine your location");
+          setError(err instanceof Error ? err.message : "Failed to fetch nearby services");
         }
-      },
-      { timeout: 10000 }
-    );
-  }, [maintenanceDue.length]);
+      } finally {
+        setLoading(false);
+        setChecked(true);
+      }
+    };
+
+    fetchNearby();
+  }, [maintenanceDue.length, retryKey]);
 
   if (maintenanceDue.length > 0 && loading) {
     return (
@@ -74,8 +73,14 @@ export default function NearbyServicesAlert({
 
   if (error && maintenanceDue.length > 0) {
     return (
-      <div className="alert alert-info">
+      <div className="alert alert-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span>ℹ️ {error}</span>
+        <button
+          onClick={() => { setError(null); setChecked(false); setRetryKey(k => k + 1); }}
+          style={{ background: "none", border: "1px solid #3b82f6", borderRadius: "4px", padding: "0.2rem 0.5rem", cursor: "pointer", color: "#1e3a8a", fontSize: "0.8rem", whiteSpace: "nowrap", marginLeft: "0.5rem" }}
+        >
+          Retry
+        </button>
       </div>
     );
   }

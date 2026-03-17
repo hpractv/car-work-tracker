@@ -12,6 +12,10 @@ import {
 import { formatMaintenanceType } from "~/utils/format";
 import { db } from "~/db.server";
 
+export function meta() {
+  return [{ title: "Settings — Car Work Tracker" }];
+}
+
 const DEFAULT_TYPES = [
   { name: "oil_change", defaultIntervalMiles: 5000, defaultIntervalMonths: 6 },
   { name: "tire_rotation", defaultIntervalMiles: 7500, defaultIntervalMonths: 12 },
