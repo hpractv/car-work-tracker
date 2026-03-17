@@ -4,14 +4,16 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { Form, useActionData } from "@remix-run/react";
+import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import { getUserId, createUserSession } from "~/session.server";
 import { verifyLogin } from "~/models/user.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await getUserId(request);
   if (userId) return redirect("/");
-  return json({});
+  const url = new URL(request.url);
+  const redirectTo = url.searchParams.get("redirectTo") ?? "/";
+  return json({ redirectTo });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -33,6 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Login() {
+  const { redirectTo } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   return (
@@ -43,6 +46,7 @@ export default function Login() {
           <div className="alert alert-error mb-2">{actionData.error}</div>
         )}
         <Form method="post">
+          <input type="hidden" name="redirectTo" value={redirectTo} />
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input

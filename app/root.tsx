@@ -15,6 +15,7 @@ import { getUserId } from "~/session.server";
 
 export const links: LinksFunction = () => [
   { rel: "manifest", href: "/manifest.webmanifest" },
+  { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
 ];
 
 export async function loader({ request }: LoaderFunctionArgs) {

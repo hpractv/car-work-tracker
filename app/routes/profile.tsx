@@ -83,7 +83,7 @@ export default function Profile() {
         {actionData?.success === "profile" && (
           <div className="alert alert-info mb-2">✓ Profile updated successfully!</div>
         )}
-        <Form method="post">
+        <Form key={`profile-${user.email}-${user.name ?? ""}`} method="post">
           <input type="hidden" name="intent" value="profile" />
           <div className="form-group">
             <label htmlFor="name">Name</label>

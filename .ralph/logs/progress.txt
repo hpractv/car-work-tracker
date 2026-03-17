@@ -45,3 +45,21 @@ Git: Committed. Tagged: 0.0.2. No remote configured, push skipped.
 Notable findings:
 - Root cause of .js file pollution: tsc was running without noEmit, emitting compiled JS into source directories. Fixed with tsconfig noEmit:true.
 - Route ID Collision warnings were caused by these .js duplicates being picked up by Remix route discovery alongside .tsx files.
+---
+[2026-03-17] Loop 3
+
+Tasks Attempted:
+- Fix delete car error display (cars.$carId.delete.tsx)
+- Fix NearbyServicesAlert error display + remove duplicate export
+- Simplify AlertBanner duplicate dismiss button code
+- Fix addCarMember duplicate membership (friendly Prisma P2002 bypass)
+- Remove unused auth.server.ts dead code
+- Add redirectTo support to login flow (session.server.ts + login.tsx)
+- Fix profile form re-render after successful update (key prop on Form)
+- Add entry.server.tsx with streaming SSR support
+- Add favicon.svg to public/ and link in root.tsx
+
+Tasks Completed: ✅ All 9
+
+Build result: npm run build ✅ exit code 0 — 118 client modules + 29 SSR modules + PWA service worker (27 precached entries)
+Git: Committed and tagged below.

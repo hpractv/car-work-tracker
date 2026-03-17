@@ -89,6 +89,9 @@ export async function addCarMember(
   const targetUser = await db.user.findUnique({ where: { email } });
   if (!targetUser) throw new Error("No user found with that email");
 
+  const existing = await db.carMember.findFirst({ where: { carId, userId: targetUser.id } });
+  if (existing) throw new Error("That user is already a member of this car");
+
   return db.carMember.create({
     data: { carId, userId: targetUser.id, role },
   });

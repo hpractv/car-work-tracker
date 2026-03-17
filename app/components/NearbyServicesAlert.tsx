@@ -59,6 +59,14 @@ export default function NearbyServicesAlert({
     );
   }
 
+  if (error) {
+    return (
+      <div className="alert alert-info">
+        <span>ℹ️ Nearby services unavailable: {error}</span>
+      </div>
+    );
+  }
+
   if (!checked || maintenanceDue.length === 0 || services.length === 0) {
     return null;
   }
@@ -74,4 +82,4 @@ export default function NearbyServicesAlert({
   );
 }
 
-export { NearbyServicesAlert };
+

@@ -64,3 +64,33 @@ db.$transaction(async (tx) => {
 <script src="/registerSW.js" />
 ```
 Without this, the service worker is never registered and the app is not truly a PWA.
+
+## Preserving redirectTo Through Login Flow
+
+When `requireUserId` throws a redirect to `/login`, the original URL is lost unless you encode it as a query param. Pattern:
+```ts
+// session.server.ts
+const url = new URL(request.url);
+throw redirect(`/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`);
+// login.tsx loader
+const redirectTo = new URL(request.url).searchParams.get("redirectTo") ?? "/";
+return json({ redirectTo });
+// login.tsx form
+<input type="hidden" name="redirectTo" value={redirectTo} />
+```
+
+## Uncontrolled Forms and Remix Re-renders
+
+Remix re-runs loaders after actions and provides fresh data, but `defaultValue` on uncontrolled `<input>` elements does NOT cause the DOM input to update. The input retains its user-typed value. Fix: add a `key` prop to the `<Form>` that changes when the underlying data changes — this forces React to unmount/remount the form with fresh `defaultValue` applied.
+
+## Preventing Prisma Unique Constraint Errors with Friendly Messages
+
+When a Prisma model has a `@@unique` constraint (e.g. `[carId, userId]` on CarMember), attempting to create a duplicate row throws a raw P2002 error. Always check for existence first and throw a user-friendly error instead:
+```ts
+const existing = await db.carMember.findFirst({ where: { carId, userId: targetUser.id } });
+if (existing) throw new Error("That user is already a member of this car");
+```
+
+## entry.server.tsx and Streaming SSR
+
+Remix uses a default `handleRequest` if no `entry.server.tsx` exists. Adding one with `renderToPipeableStream` enables proper streaming HTML responses, better error boundaries, and a configurable abort timeout. The 5-second `ABORT_DELAY` ensures stuck renders don't block indefinitely.

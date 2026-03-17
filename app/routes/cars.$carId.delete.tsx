@@ -4,7 +4,7 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
+import { Form, useLoaderData, useActionData } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { getCarById, deleteCar } from "~/models/car.server";
 
@@ -31,11 +31,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function DeleteCar() {
   const { car } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
 
   return (
     <div style={{ maxWidth: "500px" }}>
       <div className="card" style={{ borderLeft: "4px solid #dc2626" }}>
         <h1>Delete Car</h1>
+        {actionData?.error && (
+          <div className="alert alert-error" role="alert">
+            {actionData.error}
+          </div>
+        )}
         <p className="mt-2">
           Are you sure you want to delete{" "}
           <strong>

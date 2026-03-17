@@ -21,24 +21,13 @@ export default function AlertBanner({
     <div className={`alert alert-${severity}`} role="alert">
       <span>{icons[severity]}</span>
       <span style={{ flex: 1 }}>{message}</span>
-      {onDismiss && (
-        <button
-          onClick={() => { setDismissed(true); onDismiss(); }}
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1rem", lineHeight: 1 }}
-          aria-label="Dismiss"
-        >
-          ✕
-        </button>
-      )}
-      {!onDismiss && (
-        <button
-          onClick={() => setDismissed(true)}
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1rem", lineHeight: 1 }}
-          aria-label="Dismiss"
-        >
-          ✕
-        </button>
-      )}
+      <button
+        onClick={() => { setDismissed(true); onDismiss?.(); }}
+        style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1rem", lineHeight: 1 }}
+        aria-label="Dismiss"
+      >
+        ✕
+      </button>
     </div>
   );
 }

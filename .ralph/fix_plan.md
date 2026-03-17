@@ -49,7 +49,20 @@
 - [x] Loading state in `NearbyServicesAlert` while geolocation/Overpass check runs
 - [x] Add `v3_lazyRouteDiscovery` future flag to reduce Remix warnings
 
+## ✅ Completed - Phase 8: Loop 3 Bug Fixes & Improvements
+- [x] Fix delete car error display: `cars.$carId.delete.tsx` now calls `useActionData()` and renders error alert on failure
+- [x] Fix NearbyServicesAlert error display: shows info alert when nearby services fetch fails; removed duplicate named export
+- [x] Simplify AlertBanner dismiss button: merged duplicate if/else dismiss branches into single handler using `onDismiss?.()`
+- [x] Fix addCarMember duplicate membership: check for existing membership before create, throw friendly error "already a member"
+- [x] Remove unused auth.server.ts: dead code removed (routes use verifyLogin() directly)
+- [x] Add redirectTo support to login flow: requireUserId now preserves original URL; login loader/form passes redirectTo through
+- [x] Fix profile form re-render after update: added `key` prop to Profile Form so it remounts with fresh defaultValues after action
+- [x] Add entry.server.tsx: proper SSR entry point with streaming support and 5s abort timeout
+- [x] Add favicon.svg: SVG favicon created in public/ and linked in root.tsx links function
+
 ## 📋 Future Improvements
-- [ ] Add `entry.server.tsx` for custom server-side rendering (optional, Remix provides default)
+- [ ] Add `v3_singleFetch` future flag (breaking change — requires loader return type migration)  
 - [ ] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration
-- [ ] Add `v3_singleFetch` future flag (breaking change — requires loader return type migration)
+- [ ] Add `entry.server.tsx` custom streaming — DONE in Loop 3
+- [ ] Add app icons in multiple sizes for better PWA compliance
+- [ ] Add offline indicator UI when service worker detects no network
