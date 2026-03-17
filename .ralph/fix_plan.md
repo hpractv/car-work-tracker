@@ -173,7 +173,7 @@
 - [x] Make getMaintenanceForecast respect per-car overrides (align with other functions)
 - [x] Replace inline months calc with monthsDiff in getBatchMaintenanceHealthScores (consistency)
 - [x] Fix manifest icons sizes in vite.config.ts
-- [ ] Add runtimeCaching rules for images and /api endpoints in vite.config.ts
+- [x] Add runtimeCaching rules for images and /api endpoints in vite.config.ts
 - [x] Convert server-only export routes (.tsx -> .ts) to avoid client bundling of server-only loaders
 - [x] Add accessibility improvements to NearbyServicesAlert, OfflineIndicator, AlertBanner, CarCard
 

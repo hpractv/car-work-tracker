@@ -276,3 +276,17 @@ Tasks Completed:
 Build result: npm run build ✅ exit code 0
 
 ---
+
+---
+[2026-03-17] RuntimeCaching updates
+
+Tasks Attempted:
+- Add runtimeCaching rules for images and /api endpoints in vite.config.ts
+
+Tasks Completed:
+- Add runtimeCaching rules for images and /api endpoints in vite.config.ts ✅
+
+Build result: pending - will run npm run build after these changes
+
+
+[2026-03-17] Added runtimeCaching rules (images + /api) in vite.config.ts ✅

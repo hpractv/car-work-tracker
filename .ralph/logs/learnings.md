@@ -300,3 +300,6 @@ This is sufficient for basic data quality without requiring a full VIN decoder l
 Always escape CSV fields that may contain commas, quotes or newlines by wrapping them in double-quotes and doubling any internal quotes. Use CRLF line endings and the `text/csv; charset=utf-8` Content-Type with a Content-Disposition attachment header to ensure consistent downloads across platforms.
 
 For redirects coming from user-supplied input (redirectTo), implement a `safeRedirect(to, default)` helper that returns only internal paths to avoid open-redirect vulnerabilities. Sanitize `redirectTo` in login actions/loaders and prefer POST for destructive actions like logout.
+
+## Runtime caching for PWA
+Added image and /api runtimeCaching rules to vite.config.ts to improve offline UX.

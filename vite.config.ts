@@ -53,6 +53,34 @@ export default defineConfig({
               },
             },
           },
+          {
+            // Cache same-origin API responses for short-term offline fallback
+            urlPattern: /^\/api\/.*/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "api-cache",
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 3600,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // Cache images (icons, car images, receipts)
+            urlPattern: /.*\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "image-cache",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 2592000,
+              },
+            },
+          },
         ],
       },
     }),
