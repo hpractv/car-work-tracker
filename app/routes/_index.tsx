@@ -1,9 +1,11 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useRouteError, isRouteErrorResponse } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { getCarsForUser } from "~/models/car.server";
 import { getMaintenanceDue } from "~/models/maintenance.server";
 import { getUserById } from "~/models/user.server";
+import { db } from "~/db.server";
+import { formatMaintenanceType, formatDate } from "~/utils/format";
 import CarCard from "~/components/CarCard";
 import NearbyServicesAlert from "~/components/NearbyServicesAlert";
 import InstallPrompt from "~/components/InstallPrompt";
@@ -20,11 +22,33 @@ export async function loader({ request }: LoaderFunctionArgs) {
     })
   );
 
-  return json({ user, carsWithDue });
+  const recentRecords = await db.maintenanceRecord.findMany({
+    where: { car: { members: { some: { userId } } } },
+    orderBy: { date: "desc" },
+    take: 5,
+    include: { car: { select: { make: true, model: true, year: true, id: true } } },
+  });
+
+  // Compute fleet stats
+  const totalCars = cars.length;
+  const totalRecords = await db.maintenanceRecord.count({
+    where: { car: { members: { some: { userId } } } },
+  });
+  const costAggregate = await db.maintenanceRecord.aggregate({
+    where: {
+      car: { members: { some: { userId } } },
+      cost: { not: null },
+    },
+    _sum: { cost: true },
+  });
+  const totalCost = costAggregate._sum.cost ?? 0;
+  const carsWithDueCount = carsWithDue.filter((c) => c.due.length > 0).length;
+
+  return json({ user, carsWithDue, recentRecords, totalCars, totalRecords, totalCost, carsWithDueCount });
 }
 
 export default function Index() {
-  const { user, carsWithDue } = useLoaderData<typeof loader>();
+  const { user, carsWithDue, recentRecords, totalCars, totalRecords, totalCost, carsWithDueCount } = useLoaderData<typeof loader>();
 
   const allDue = carsWithDue.flatMap((c) => c.due);
 
@@ -43,7 +67,32 @@ export default function Index() {
         </a>
       </div>
 
-      {carsWithDue.length === 0 ? (
+      {carsWithDue.length > 0 && (
+        <div className="card mb-2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem" }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#1e40af" }}>{totalCars}</div>
+            <div className="text-muted text-sm">Car{totalCars !== 1 ? "s" : ""}</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#1e40af" }}>{totalRecords}</div>
+            <div className="text-muted text-sm">Service Record{totalRecords !== 1 ? "s" : ""}</div>
+          </div>
+          {totalCost > 0 && (
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#1e40af" }}>${totalCost.toFixed(0)}</div>
+              <div className="text-muted text-sm">Total Spent</div>
+            </div>
+          )}
+          {carsWithDueCount > 0 && (
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#f59e0b" }}>{carsWithDueCount}</div>
+              <div className="text-muted text-sm">Need Service</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {carsWithDue.length === 0 ?(
         <div className="card" style={{ textAlign: "center", padding: "2rem" }}>
           <p className="text-muted">You have no cars yet.</p>
           <a href="/cars/new" className="btn btn-primary mt-2">
@@ -65,7 +114,7 @@ export default function Index() {
                     <ul style={{ margin: "0.35rem 0 0.5rem 1.25rem" }}>
                       {due.map((d) => (
                         <li key={d.type} className="text-sm">
-                          <strong>{d.type.replace(/_/g, " ")}</strong>: {d.reason}
+                          <strong>{formatMaintenanceType(d.type)}</strong>: {d.reason}
                         </li>
                       ))}
                     </ul>
@@ -82,6 +131,51 @@ export default function Index() {
           </div>
         </>
       )}
+
+      {recentRecords.length > 0 && (
+        <div className="card mt-2">
+          <h2>Recent Activity</h2>
+          <div className="timeline">
+            {recentRecords.map((record) => (
+              <div key={record.id} className="timeline-item">
+                <div className="flex flex-between">
+                  <div>
+                    <strong>{formatMaintenanceType(record.type)}</strong>
+                    <span className="text-muted text-sm" style={{ marginLeft: "0.5rem" }}>
+                      {formatDate(record.date)}
+                    </span>
+                  </div>
+                  <a href={`/cars/${record.car.id}`} className="btn btn-secondary btn-sm">
+                    {record.car.year} {record.car.make} {record.car.model}
+                  </a>
+                </div>
+                <div className="text-sm mt-1" style={{ color: "#475569" }}>
+                  {record.mileage.toLocaleString()} miles
+                  {record.cost != null ? ` · $${record.cost.toFixed(2)}` : ""}
+                  {record.vendor ? ` · ${record.vendor}` : ""}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  return (
+    <div className="card" style={{ borderLeft: "4px solid #dc2626", maxWidth: "600px" }}>
+      <h2>Something went wrong</h2>
+      {isRouteErrorResponse(error) ? (
+        <p className="text-muted">{error.status} — {error.statusText || "Error"}</p>
+      ) : error instanceof Error ? (
+        <p className="text-muted">{error.message}</p>
+      ) : (
+        <p className="text-muted">An unexpected error occurred</p>
+      )}
+      <a href="/" className="btn btn-secondary mt-2">Go Home</a>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { Form, useLoaderData, useActionData } from "@remix-run/react";
+import { Form, useLoaderData, useActionData, useNavigation } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { getCarById, deleteCar } from "~/models/car.server";
 
@@ -32,6 +32,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteCar() {
   const { car } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
 
   return (
     <div style={{ maxWidth: "500px" }}>
@@ -51,8 +53,8 @@ export default function DeleteCar() {
         </p>
         <div className="flex gap-sm mt-3">
           <Form method="post">
-            <button type="submit" className="btn btn-danger">
-              Yes, Delete
+            <button type="submit" className="btn btn-danger" disabled={isSubmitting}>
+              {isSubmitting ? "Deleting..." : "Yes, Delete"}
             </button>
           </Form>
           <a href={`/cars/${car.id}`} className="btn btn-secondary">

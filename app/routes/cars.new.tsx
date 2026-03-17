@@ -4,7 +4,7 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { Form, useActionData } from "@remix-run/react";
+import { Form, useActionData, useNavigation, useRouteError, isRouteErrorResponse } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { createCar } from "~/models/car.server";
 
@@ -25,8 +25,19 @@ export async function action({ request }: ActionFunctionArgs) {
   const vendor = String(formData.get("vendor") ?? "").trim() || null;
   const description = String(formData.get("description") ?? "").trim() || null;
 
-  if (!make || !model || !year || isNaN(currentMileage)) {
-    return json({ error: "Make, model, year, and mileage are required" }, { status: 400 });
+  const currentYear = new Date().getFullYear();
+  if (!make) return json({ error: "Make is required" }, { status: 400 });
+  if (make.length > 100) return json({ error: "Make must be 100 characters or less" }, { status: 400 });
+  if (!model) return json({ error: "Model is required" }, { status: 400 });
+  if (model.length > 100) return json({ error: "Model must be 100 characters or less" }, { status: 400 });
+  if (isNaN(year) || year < 1886 || year > currentYear + 2) {
+    return json({ error: `Year must be between 1886 and ${currentYear + 2}` }, { status: 400 });
+  }
+  if (isNaN(currentMileage) || currentMileage < 0) {
+    return json({ error: "Mileage must be a non-negative number" }, { status: 400 });
+  }
+  if (purchaseCostRaw && (isNaN(parseFloat(purchaseCostRaw)) || parseFloat(purchaseCostRaw) < 0)) {
+    return json({ error: "Purchase cost must be a non-negative number" }, { status: 400 });
   }
 
   const purchaseCost = purchaseCostRaw ? parseFloat(purchaseCostRaw) : null;
@@ -41,6 +52,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function CarsNew() {
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
 
   return (
     <div style={{ maxWidth: "600px" }}>
@@ -89,11 +102,28 @@ export default function CarsNew() {
             <textarea id="description" name="description" rows={3} className="form-control" placeholder="Additional notes..." />
           </div>
           <div className="flex gap-sm">
-            <button type="submit" className="btn btn-primary">Add Car</button>
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>{isSubmitting ? "Adding car..." : "Add Car"}</button>
             <a href="/cars" className="btn btn-secondary">Cancel</a>
           </div>
         </Form>
       </div>
+    </div>
+  );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  return (
+    <div className="card" style={{ borderLeft: "4px solid #dc2626", maxWidth: "600px" }}>
+      <h2>Something went wrong</h2>
+      {isRouteErrorResponse(error) ? (
+        <p className="text-muted">{error.status} — {error.statusText || "Error"}</p>
+      ) : error instanceof Error ? (
+        <p className="text-muted">{error.message}</p>
+      ) : (
+        <p className="text-muted">An unexpected error occurred</p>
+      )}
+      <a href="/cars" className="btn btn-secondary mt-2">← Back to Cars</a>
     </div>
   );
 }

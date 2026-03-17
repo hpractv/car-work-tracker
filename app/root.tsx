@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Links,
   Meta,
@@ -12,10 +13,12 @@ import {
 import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { getUserId } from "~/session.server";
+import OfflineIndicator from "~/components/OfflineIndicator";
 
 export const links: LinksFunction = () => [
   { rel: "manifest", href: "/manifest.webmanifest" },
   { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+  { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
 ];
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -29,9 +32,58 @@ export function meta() {
     { name: "description", content: "Track your car maintenance" },
     { name: "theme-color", content: "#1e40af" },
     { name: "apple-mobile-web-app-capable", content: "yes" },
-    { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+    { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
     { name: "apple-mobile-web-app-title", content: "Car Work Tracker" },
   ];
+}
+
+function NavBar({ isLoggedIn }: { isLoggedIn: boolean }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  return (
+    <nav className="navbar">
+      <a href="/" className="nav-brand">🚗 Car Work Tracker</a>
+      <button
+        className="nav-hamburger"
+        aria-label="Toggle navigation"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen(!menuOpen)}
+      >
+        {menuOpen ? "✕" : "☰"}
+      </button>
+      <div className={`nav-links${menuOpen ? " nav-open" : ""}`}>
+        {isLoggedIn ? (
+          <>
+            <a href="/cars" onClick={() => setMenuOpen(false)}>My Cars</a>
+            <a href="/profile" onClick={() => setMenuOpen(false)}>Profile</a>
+            <Form method="post" action="/logout" style={{ display: "inline" }}>
+              <button
+                type="submit"
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "white",
+                  opacity: 0.9,
+                  fontSize: "inherit",
+                  fontFamily: "inherit",
+                  padding: 0,
+                }}
+                onMouseOver={(e) => ((e.target as HTMLButtonElement).style.opacity = "1")}
+                onMouseOut={(e) => ((e.target as HTMLButtonElement).style.opacity = "0.9")}
+              >
+                Logout
+              </button>
+            </Form>
+          </>
+        ) : (
+          <>
+            <a href="/login" onClick={() => setMenuOpen(false)}>Sign In</a>
+            <a href="/signup" onClick={() => setMenuOpen(false)}>Sign Up</a>
+          </>
+        )}
+      </div>
+    </nav>
+  );
 }
 
 export default function App() {
@@ -41,50 +93,17 @@ export default function App() {
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <Meta />
         <Links />
         <style>{globalStyles}</style>
       </head>
       <body>
-        <nav className="navbar">
-          <a href="/" className="nav-brand">🚗 Car Work Tracker</a>
-          <div className="nav-links">
-            {isLoggedIn ? (
-              <>
-                <a href="/cars">My Cars</a>
-                <a href="/profile">Profile</a>
-                <Form method="post" action="/logout" style={{ display: "inline" }}>
-                  <button
-                    type="submit"
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      color: "white",
-                      opacity: 0.9,
-                      fontSize: "inherit",
-                      fontFamily: "inherit",
-                      padding: 0,
-                    }}
-                    onMouseOver={(e) => ((e.target as HTMLButtonElement).style.opacity = "1")}
-                    onMouseOut={(e) => ((e.target as HTMLButtonElement).style.opacity = "0.9")}
-                  >
-                    Logout
-                  </button>
-                </Form>
-              </>
-            ) : (
-              <>
-                <a href="/login">Sign In</a>
-                <a href="/signup">Sign Up</a>
-              </>
-            )}
-          </div>
-        </nav>
+        <NavBar isLoggedIn={isLoggedIn} />
         <main className="container">
           <Outlet />
         </main>
+        <OfflineIndicator />
         <ScrollRestoration />
         <Scripts />
         <script src="/registerSW.js" />
@@ -99,7 +118,7 @@ export function ErrorBoundary() {
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <title>Error</title>
         <style>{globalStyles}</style>
       </head>
@@ -175,4 +194,11 @@ const globalStyles = `
   th, td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid #e2e8f0; }
   th { font-weight: 600; font-size: 0.85rem; color: #64748b; background: #f8fafc; }
   .divider { border: none; border-top: 1px solid #e2e8f0; margin: 1.25rem 0; }
+  .nav-hamburger { display: none; background: none; border: none; color: white; font-size: 1.4rem; cursor: pointer; padding: 0.25rem; }
+  @media (max-width: 640px) { 
+    .nav-hamburger { display: block; }
+    .nav-links { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0; background: #1e40af; padding: 0.5rem 1rem; z-index: 100; }
+    .nav-links.nav-open { display: flex; }
+    .navbar { position: relative; flex-wrap: wrap; }
+  }
 `;

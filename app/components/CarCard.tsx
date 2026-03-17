@@ -1,4 +1,5 @@
 import { Link } from "@remix-run/react";
+import { formatDate } from "~/utils/format";
 
 interface CarCardProps {
   car: {
@@ -10,9 +11,11 @@ interface CarCardProps {
     vendor?: string | null;
   };
   dueCount?: number;
+  lastServiceDate?: string | null;
+  totalRecords?: number;
 }
 
-export default function CarCard({ car, dueCount }: CarCardProps) {
+export default function CarCard({ car, dueCount, lastServiceDate, totalRecords }: CarCardProps) {
   return (
     <div className="card" style={{ position: "relative" }}>
       {dueCount != null && dueCount > 0 && (
@@ -40,6 +43,13 @@ export default function CarCard({ car, dueCount }: CarCardProps) {
         {car.currentMileage.toLocaleString()} miles
         {car.vendor ? ` · ${car.vendor}` : ""}
       </p>
+      {(lastServiceDate || (totalRecords !== undefined && totalRecords > 0)) && (
+        <p className="text-muted text-sm">
+          {totalRecords !== undefined && totalRecords > 0 && `${totalRecords} record${totalRecords !== 1 ? "s" : ""}`}
+          {lastServiceDate && totalRecords !== undefined && totalRecords > 0 && " · "}
+          {lastServiceDate && `Last: ${formatDate(lastServiceDate)}`}
+        </p>
+      )}
       <div className="mt-2">
         <Link to={`/cars/${car.id}`} className="btn btn-primary btn-sm">
           View Details

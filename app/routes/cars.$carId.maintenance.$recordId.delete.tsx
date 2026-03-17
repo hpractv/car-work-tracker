@@ -4,7 +4,7 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
+import { Form, useLoaderData, useNavigation } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { getCarById } from "~/models/car.server";
 import {
@@ -35,6 +35,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function DeleteMaintenance() {
   const { car, record } = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
   const dateStr = new Date(record.date).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -53,8 +55,8 @@ export default function DeleteMaintenance() {
         </p>
         <div className="flex gap-sm mt-3">
           <Form method="post">
-            <button type="submit" className="btn btn-danger">
-              Yes, Delete
+            <button type="submit" className="btn btn-danger" disabled={isSubmitting}>
+              {isSubmitting ? "Deleting..." : "Yes, Delete"}
             </button>
           </Form>
           <a href={`/cars/${car.id}`} className="btn btn-secondary">

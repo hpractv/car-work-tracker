@@ -4,9 +4,9 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
-import { getCarById, addCarMember, removeCarMember } from "~/models/car.server";
+import { getCarById, addCarMember, removeCarMember, updateCarMemberRole } from "~/models/car.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -34,6 +34,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
+  if (intent === "update") {
+    const memberId = String(formData.get("memberId") ?? "");
+    const newRole = String(formData.get("role") ?? "");
+    if (!memberId || !["owner", "driver"].includes(newRole)) {
+      return json({ error: "Invalid role" }, { status: 400 });
+    }
+    try {
+      await updateCarMemberRole(carId, memberId, newRole, userId);
+      return redirect(`/cars/${carId}/members`);
+    } catch (e) {
+      return json({ error: (e as Error).message }, { status: 400 });
+    }
+  }
+
   if (intent === "remove") {
     const memberId = String(formData.get("memberId") ?? "");
     try {
@@ -50,6 +64,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function CarMembers() {
   const { car, isOwner, currentUserId } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
 
   return (
     <div style={{ maxWidth: "700px" }}>
@@ -77,13 +93,22 @@ export default function CarMembers() {
                 {isOwner && (
                   <td>
                     {m.userId !== currentUserId && (
-                      <Form method="post" style={{ display: "inline" }}>
-                        <input type="hidden" name="intent" value="remove" />
-                        <input type="hidden" name="memberId" value={m.id} />
-                        <button type="submit" className="btn btn-danger btn-sm">
-                          Remove
-                        </button>
-                      </Form>
+                      <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
+                        <Form method="post" style={{ display: "inline-flex", gap: "0.35rem", alignItems: "center" }}>
+                          <input type="hidden" name="intent" value="update" />
+                          <input type="hidden" name="memberId" value={m.id} />
+                          <select name="role" defaultValue={m.role} className="form-control" style={{ padding: "0.2rem 0.4rem", fontSize: "0.8rem", width: "auto" }}>
+                            <option value="owner">Owner</option>
+                            <option value="driver">Driver</option>
+                          </select>
+                          <button type="submit" className="btn btn-secondary btn-sm">Save</button>
+                        </Form>
+                        <Form method="post" style={{ display: "inline" }}>
+                          <input type="hidden" name="intent" value="remove" />
+                          <input type="hidden" name="memberId" value={m.id} />
+                          <button type="submit" className="btn btn-danger btn-sm" disabled={isSubmitting}>{isSubmitting ? "..." : "Remove"}</button>
+                        </Form>
+                      </div>
                     )}
                   </td>
                 )}
@@ -110,7 +135,7 @@ export default function CarMembers() {
                   <option value="owner">Owner</option>
                 </select>
               </div>
-              <button type="submit" className="btn btn-primary">Add</button>
+              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>{isSubmitting ? "Adding..." : "Add"}</button>
             </div>
           </Form>
         </div>

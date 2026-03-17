@@ -43,9 +43,17 @@ export default function NearbyServicesAlert({
           setChecked(true);
         }
       },
-      () => {
+      (error) => {
         setLoading(false);
         setChecked(true);
+        if (error.code === 1) {
+          // GeolocationPositionError.PERMISSION_DENIED
+          setError("Location access denied — enable location to find nearby service stations");
+        } else if (error.code === 2) {
+          setError("Location unavailable");
+        } else {
+          setError("Could not determine your location");
+        }
       },
       { timeout: 10000 }
     );
@@ -59,10 +67,10 @@ export default function NearbyServicesAlert({
     );
   }
 
-  if (error) {
+  if (error && maintenanceDue.length > 0) {
     return (
       <div className="alert alert-info">
-        <span>ℹ️ Nearby services unavailable: {error}</span>
+        <span>ℹ️ {error}</span>
       </div>
     );
   }

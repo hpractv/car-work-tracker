@@ -4,7 +4,7 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { getUserId, createUserSession } from "~/session.server";
 import { verifyLogin } from "~/models/user.server";
 
@@ -37,6 +37,8 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Login() {
   const { redirectTo } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
 
   return (
     <div className="auth-container">
@@ -69,8 +71,8 @@ export default function Login() {
               className="form-control"
             />
           </div>
-          <button type="submit" className="btn btn-primary" style={{ width: "100%" }}>
-            Sign In
+          <button type="submit" className="btn btn-primary" style={{ width: "100%" }} disabled={isSubmitting}>
+            {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
         </Form>
         <p className="text-muted text-sm mt-2" style={{ textAlign: "center" }}>

@@ -1,4 +1,5 @@
 import { Link } from "@remix-run/react";
+import { formatDate, formatMaintenanceType } from "~/utils/format";
 
 interface MaintenanceRecord {
   id: string;
@@ -13,21 +14,6 @@ interface MaintenanceRecord {
 interface MaintenanceListProps {
   records: MaintenanceRecord[];
   carId: string;
-}
-
-function formatDate(date: string | Date) {
-  return new Date(date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatType(type: string) {
-  return type
-    .split("_")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
 }
 
 export default function MaintenanceList({ records, carId }: MaintenanceListProps) {
@@ -46,7 +32,7 @@ export default function MaintenanceList({ records, carId }: MaintenanceListProps
         <div key={record.id} className="timeline-item">
           <div className="flex flex-between">
             <div>
-              <strong>{formatType(record.type)}</strong>
+              <strong>{formatMaintenanceType(record.type)}</strong>
               <span className="text-muted text-sm" style={{ marginLeft: "0.5rem" }}>
                 {formatDate(record.date)}
               </span>

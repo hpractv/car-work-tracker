@@ -4,7 +4,7 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { Form, useActionData } from "@remix-run/react";
+import { Form, useActionData, useNavigation } from "@remix-run/react";
 import { getUserId, createUserSession } from "~/session.server";
 import { createUser, getUserByEmail } from "~/models/user.server";
 
@@ -38,6 +38,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function Signup() {
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
 
   return (
     <div className="auth-container">
@@ -80,8 +82,8 @@ export default function Signup() {
               className="form-control"
             />
           </div>
-          <button type="submit" className="btn btn-primary" style={{ width: "100%" }}>
-            Create Account
+          <button type="submit" className="btn btn-primary" style={{ width: "100%" }} disabled={isSubmitting}>
+            {isSubmitting ? "Creating account..." : "Create Account"}
           </button>
         </Form>
         <p className="text-muted text-sm mt-2" style={{ textAlign: "center" }}>

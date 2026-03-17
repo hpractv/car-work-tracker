@@ -4,7 +4,7 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { getUserById, getUserByEmail, updateUserProfile, updateUserPassword } from "~/models/user.server";
 
@@ -66,6 +66,8 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Profile() {
   const { user } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
 
   return (
     <div style={{ maxWidth: "600px" }}>
@@ -107,8 +109,8 @@ export default function Profile() {
               className="form-control"
             />
           </div>
-          <button type="submit" className="btn btn-primary">
-            Save Profile
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save Profile"}
           </button>
         </Form>
       </div>
@@ -155,8 +157,8 @@ export default function Profile() {
               className="form-control"
             />
           </div>
-          <button type="submit" className="btn btn-primary">
-            Change Password
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Changing..." : "Change Password"}
           </button>
         </Form>
       </div>

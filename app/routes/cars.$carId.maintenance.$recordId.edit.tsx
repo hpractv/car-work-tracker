@@ -4,7 +4,7 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import { Form, useActionData, useLoaderData, useNavigation, useRouteError, isRouteErrorResponse } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { getCarById } from "~/models/car.server";
 import {
@@ -12,6 +12,7 @@ import {
   updateMaintenanceRecord,
   getMaintenanceTypes,
 } from "~/models/maintenance.server";
+import { formatMaintenanceType } from "~/utils/format";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -41,11 +42,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const vendor = String(formData.get("vendor") ?? "").trim() || null;
   const description = String(formData.get("description") ?? "").trim() || null;
 
-  if (!type || !dateStr || isNaN(mileage)) {
-    return json({ error: "Type, date, and mileage are required" }, { status: 400 });
+  if (!type) return json({ error: "Maintenance type is required" }, { status: 400 });
+  if (!dateStr) return json({ error: "Date is required" }, { status: 400 });
+  const dateObj = new Date(dateStr + "T12:00:00");
+  if (isNaN(dateObj.getTime())) return json({ error: "Invalid date" }, { status: 400 });
+  if (isNaN(mileage) || mileage < 0) {
+    return json({ error: "Mileage must be a non-negative number" }, { status: 400 });
+  }
+  if (costRaw && (isNaN(parseFloat(costRaw)) || parseFloat(costRaw) < 0)) {
+    return json({ error: "Cost must be a non-negative number" }, { status: 400 });
   }
 
-  const date = new Date(dateStr + "T12:00:00");
+  const date = dateObj;
   const cost = costRaw ? parseFloat(costRaw) : null;
 
   await updateMaintenanceRecord(recordId, { type, date, mileage, cost, vendor, description });
@@ -55,6 +63,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function EditMaintenance() {
   const { car, record, maintenanceTypes } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
 
   const dateValue = new Date(record.date).toISOString().split("T")[0];
 
@@ -78,7 +88,7 @@ export default function EditMaintenance() {
             <select id="type" name="type" required defaultValue={record.type} className="form-control">
               {maintenanceTypes.map((mt) => (
                 <option key={mt.id} value={mt.name}>
-                  {mt.name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                  {formatMaintenanceType(mt.name)}
                 </option>
               ))}
             </select>
@@ -108,11 +118,28 @@ export default function EditMaintenance() {
             <textarea id="description" name="description" rows={3} defaultValue={record.description ?? ""} className="form-control" />
           </div>
           <div className="flex gap-sm">
-            <button type="submit" className="btn btn-primary">Save Changes</button>
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Changes"}</button>
             <a href={`/cars/${car.id}`} className="btn btn-secondary">Cancel</a>
           </div>
         </Form>
       </div>
+    </div>
+  );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  return (
+    <div className="card" style={{ borderLeft: "4px solid #dc2626", maxWidth: "600px" }}>
+      <h2>Something went wrong</h2>
+      {isRouteErrorResponse(error) ? (
+        <p className="text-muted">{error.status} — {error.statusText || "Error"}</p>
+      ) : error instanceof Error ? (
+        <p className="text-muted">{error.message}</p>
+      ) : (
+        <p className="text-muted">An unexpected error occurred</p>
+      )}
+      <a href="/cars" className="btn btn-secondary mt-2">← Back to Cars</a>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, Link } from "@remix-run/react";
+import { useLoaderData, Link, useRouteError, isRouteErrorResponse, useSearchParams } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
+import { formatMaintenanceType } from "~/utils/format";
 import { getCarById } from "~/models/car.server";
 import { getMaintenanceDue } from "~/models/maintenance.server";
 import MaintenanceList from "~/components/MaintenanceList";
@@ -20,6 +21,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function CarDetail() {
   const { car, due, isOwner } = useLoaderData<typeof loader>();
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filterType = searchParams.get("type") ?? "";
+  const uniqueTypes = [...new Set(car.maintenanceRecords.map(r => r.type))].sort();
+  const filteredRecords = filterType
+    ? car.maintenanceRecords.filter(r => r.type === filterType)
+    : car.maintenanceRecords;
 
   return (
     <div>
@@ -50,7 +58,7 @@ export default function CarDetail() {
       {due.length > 0 && (
         <AlertBanner
           severity="warning"
-          message={`Maintenance due: ${due.map((d) => d.type.replace(/_/g, " ")).join(", ")}`}
+          message={`Maintenance due: ${due.map((d) => formatMaintenanceType(d.type)).join(", ")}`}
         />
       )}
 
@@ -65,6 +73,20 @@ export default function CarDetail() {
             {car.purchaseCost != null && <tr><th>Purchase Cost</th><td>${car.purchaseCost.toFixed(2)}</td></tr>}
             {car.vendor && <tr><th>Vendor</th><td>{car.vendor}</td></tr>}
             {car.description && <tr><th>Description</th><td>{car.description}</td></tr>}
+            {car.maintenanceRecords.length > 0 && (
+              <>
+                <tr>
+                  <th>Last Service</th>
+                  <td>{new Date(car.maintenanceRecords[0].date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</td>
+                </tr>
+                {car.maintenanceRecords.some(r => r.cost != null) && (
+                  <tr>
+                    <th>Avg Service Cost</th>
+                    <td>${(car.maintenanceRecords.filter(r => r.cost != null).reduce((sum, r) => sum + (r.cost ?? 0), 0) / car.maintenanceRecords.filter(r => r.cost != null).length).toFixed(2)}</td>
+                  </tr>
+                )}
+              </>
+            )}
           </tbody>
         </table>
       </div>
@@ -89,7 +111,24 @@ export default function CarDetail() {
             )}
           </div>
         )}
-        <MaintenanceList records={car.maintenanceRecords} carId={car.id} />
+        {uniqueTypes.length > 1 && (
+          <div className="flex gap-sm mb-2" style={{ alignItems: "center" }}>
+            <label htmlFor="type-filter" className="text-sm" style={{ fontWeight: 500 }}>Filter by type:</label>
+            <select
+              id="type-filter"
+              value={filterType}
+              onChange={(e) => setSearchParams(e.target.value ? { type: e.target.value } : {}, { replace: true })}
+              className="form-control"
+              style={{ width: "auto", padding: "0.25rem 0.5rem" }}
+            >
+              <option value="">All types</option>
+              {uniqueTypes.map(t => (
+                <option key={t} value={t}>{formatMaintenanceType(t)}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        <MaintenanceList records={filteredRecords} carId={car.id} />
       </div>
 
       <div className="card">
@@ -120,6 +159,23 @@ export default function CarDetail() {
       </div>
 
       <a href="/cars" className="btn btn-secondary">← Back to Cars</a>
+    </div>
+  );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  return (
+    <div className="card" style={{ borderLeft: "4px solid #dc2626", maxWidth: "600px" }}>
+      <h2>Something went wrong</h2>
+      {isRouteErrorResponse(error) ? (
+        <p className="text-muted">{error.status} — {error.statusText || "Error"}</p>
+      ) : error instanceof Error ? (
+        <p className="text-muted">{error.message}</p>
+      ) : (
+        <p className="text-muted">An unexpected error occurred</p>
+      )}
+      <a href="/cars" className="btn btn-secondary mt-2">← Back to Cars</a>
     </div>
   );
 }

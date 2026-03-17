@@ -1,6 +1,13 @@
 import { createCookieSessionStorage, redirect } from "@remix-run/node";
 
-const sessionSecret = process.env.SESSION_SECRET || "default-secret-change-me";
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("SESSION_SECRET environment variable must be set in production");
+  }
+  console.warn("⚠️  SESSION_SECRET not set — using insecure default. Set SESSION_SECRET in .env for security.");
+}
+const secret = sessionSecret || "default-secret-change-me";
 
 export const sessionStorage = createCookieSessionStorage({
   cookie: {
@@ -8,7 +15,7 @@ export const sessionStorage = createCookieSessionStorage({
     httpOnly: true,
     path: "/",
     sameSite: "lax",
-    secrets: [sessionSecret],
+    secrets: [secret],
     secure: process.env.NODE_ENV === "production",
   },
 });

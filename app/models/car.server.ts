@@ -109,3 +109,26 @@ export async function removeCarMember(
 
   return db.carMember.delete({ where: { id: memberId } });
 }
+
+export async function updateCarMemberRole(
+  carId: string,
+  memberId: string,
+  newRole: string,
+  requestingUserId: string
+) {
+  const requester = await db.carMember.findFirst({
+    where: { carId, userId: requestingUserId, role: "owner" },
+  });
+  if (!requester) throw new Error("Only owners can change member roles");
+
+  // Prevent owner from changing their own role to driver if no other owners
+  const member = await db.carMember.findUnique({ where: { id: memberId } });
+  if (!member) throw new Error("Member not found");
+
+  if (member.userId === requestingUserId && newRole !== "owner") {
+    const ownerCount = await db.carMember.count({ where: { carId, role: "owner" } });
+    if (ownerCount <= 1) throw new Error("Cannot demote the only owner — promote another member first");
+  }
+
+  return db.carMember.update({ where: { id: memberId }, data: { role: newRole } });
+}
