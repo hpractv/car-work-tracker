@@ -200,3 +200,59 @@ Notable findings:
 - Print route (/cars/:id/print) returns a full standalone HTML document (bypasses Remix root layout)
 - Root loader now computes due maintenance count for navbar badge using inline Prisma queries
 - Global /search route supports searching cars + records with SQLite contains (case-insensitive)
+
+---
+[2026-03-17] Loop 10
+
+Tasks Attempted:
+- Fix date range off-by-one in maintenance._index.tsx (lt + next-day exclusive upper bound)
+- Fix type filter to use exact match instead of partial contains
+- Add aria-sort attributes to maintenance history table headers
+- Add 'total for N matched records (all pages)' clarification
+- Fix search.tsx: trim whitespace, show 'X of Y' totals for cars and records
+- Optimize root.tsx: skip due count DB queries for unauthenticated users
+- Add OfflineIndicator to navbar in root.tsx
+- Fix NearbyServicesAlert: setLoading in finally block, catch .json() parse errors
+- Enhance reports: year-over-year % change with ▲/▼ arrows, fix division by zero
+- Fix maintenance.server.ts: replace 30-day month ms approximation with accurate monthsDiff()
+- Add getMaintenanceForecast() to maintenance.server.ts
+- Add 'Next due' forecast on car detail service schedule cards
+- Fix car.server.ts: email format validation in addCarMember
+- Fix car.server.ts: negative mileage guard in updateCarMileage
+
+Tasks Completed: ✅ All 14
+
+Build result: npm run build ✅ exit code 0 — 135 client modules + 38 SSR modules + PWA service worker (36 precached entries)
+TypeCheck: npm run typecheck ✅ exit code 0
+Git: Committed (15 files changed, 397 insertions, 165 deletions). Tagged: 0.0.10. No remote configured, push skipped.
+
+Notable findings:
+- The 30-day month approximation was in 4 places in maintenance.server.ts; all replaced with monthsDiff(from, to) helper
+- getMaintenanceForecast() returns per-type next due mileage/date forecasts based on last record + interval
+- Root loader optimization: unauthenticated users skip all DB queries (important for login/signup page perf)
+- Date range fix: using lt + next-day is cleaner than lte + 23:59:59.999 and handles all edge cases
+
+---
+[2026-03-17] Loop 11
+
+Tasks Attempted:
+- Fix root.tsx monthsDiff bug (30-day approximation vs calendar months)
+- Add dark mode CSS (CSS custom properties + prefers-color-scheme)
+- Add VIN and color fields to Car schema + all forms, CarCard, detail page
+- Add car archive/decommission feature (isArchived field, archiveCar/restoreCar)
+- Add OdometerLog model and /cars/:carId/odometer route with trend chart
+- Improve CSV exports (VIN, color, receiptUrl columns)
+- Enhance reports page (service frequency, 24-month trend, top 5 expensive)
+- Add receipt URL links to global maintenance history page
+
+Tasks Completed: ✅ All 8
+
+Build result: npm run build ✅ exit code 0 — 137 client modules + 39 SSR modules + PWA service worker (37 precached entries)
+TypeCheck: npm run typecheck ✅ exit code 0
+
+Notable findings:
+- root.tsx had a 30-day month approximation bug that made the notification badge count inconsistent with the maintenance due logic in maintenance.server.ts — fixed with proper monthsDiff helper
+- Dark mode uses CSS custom properties with @media (prefers-color-scheme: dark) — no JavaScript required
+- VIN field auto-uppercases input; validated for alphanumeric ≤17 chars
+- Car archive hides cars from all lists and maintenance calculations without deleting data
+- OdometerLog shows mileage progression bar chart for trend visualization

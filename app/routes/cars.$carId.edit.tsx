@@ -31,6 +31,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const description = String(formData.get("description") ?? "").trim() || null;
   const imageUrl = String(formData.get("imageUrl") ?? "").trim() || null;
   const notes = String(formData.get("notes") ?? "").trim() || null;
+  const vin = String(formData.get("vin") ?? "").trim().toUpperCase() || null;
+  const color = String(formData.get("color") ?? "").trim() || null;
+
+  if (vin && vin.length > 17) return json({ error: "VIN must be 17 characters or less" }, { status: 400 });
+  if (vin && !/^[A-Z0-9]+$/.test(vin)) return json({ error: "VIN must contain only letters and numbers" }, { status: 400 });
 
   if (imageUrl) {
     try { new URL(imageUrl); } catch { return json({ error: "Image URL must be a valid URL" }, { status: 400 }); }
@@ -54,7 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const purchaseCost = purchaseCostRaw ? parseFloat(purchaseCostRaw) : null;
 
   try {
-    await updateCar(carId, { make, model, year, currentMileage, purchaseCost, vendor, description, imageUrl, notes }, userId);
+    await updateCar(carId, { make, model, year, currentMileage, purchaseCost, vendor, description, imageUrl, notes, vin, color }, userId);
     return redirect(`/cars/${carId}`);
   } catch (e) {
     return json({ error: (e as Error).message }, { status: 403 });
@@ -107,6 +112,16 @@ export default function EditCar() {
             <div className="form-group">
               <label htmlFor="vendor">Vendor</label>
               <input id="vendor" name="vendor" type="text" defaultValue={car.vendor ?? ""} className="form-control" />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div className="form-group">
+              <label htmlFor="vin">VIN (optional)</label>
+              <input id="vin" name="vin" type="text" maxLength={17} defaultValue={car.vin ?? ""} className="form-control" placeholder="e.g. 1HGBH41JXMN109186" />
+            </div>
+            <div className="form-group">
+              <label htmlFor="color">Color</label>
+              <input id="color" name="color" type="text" defaultValue={car.color ?? ""} className="form-control" placeholder="e.g. Midnight Blue" />
             </div>
           </div>
           <div className="form-group">

@@ -19,7 +19,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const carIds = cars.map((c) => c.id);
 
   if (carIds.length === 0) {
-    const csvContent = "Car,Date,Type,Mileage,Cost ($),Vendor,Notes\r\n";
+    const csvContent = "Car,VIN,Color,Date,Service Type,Mileage,Cost ($),Vendor,Notes,Receipt URL\r\n";
     return new Response(csvContent, {
       status: 200,
       headers: {
@@ -33,19 +33,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     where: { carId: { in: carIds } },
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     include: {
-      car: { select: { make: true, model: true, year: true } },
+      car: { select: { make: true, model: true, year: true, vin: true, color: true } },
     },
   });
 
-  const headers = ["Car", "Date", "Service Type", "Mileage", "Cost ($)", "Vendor", "Notes"];
+  const headers = ["Car", "VIN", "Color", "Date", "Service Type", "Mileage", "Cost ($)", "Vendor", "Notes", "Receipt URL"];
   const rows = records.map((r) => [
     escapeCsvField(`${r.car.year} ${r.car.make} ${r.car.model}`),
+    escapeCsvField(r.car.vin),
+    escapeCsvField(r.car.color),
     escapeCsvField(new Date(r.date).toISOString().split("T")[0]),
     escapeCsvField(formatMaintenanceType(r.type)),
     escapeCsvField(r.mileage),
     escapeCsvField(r.cost != null ? r.cost.toFixed(2) : ""),
     escapeCsvField(r.vendor),
     escapeCsvField(r.description),
+    escapeCsvField(r.receiptUrl),
   ]);
 
   const csvContent = [

@@ -369,6 +369,17 @@ export default function MaintenanceIndex() {
                         </td>
                         <td style={{ whiteSpace: "nowrap" }}>
                           <div className="flex gap-sm">
+                            {record.receiptUrl && (
+                              <a
+                                href={record.receiptUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-secondary btn-sm"
+                                title="View Receipt"
+                              >
+                                📄
+                              </a>
+                            )}
                             <Link
                               to={`/cars/${record.car.id}/maintenance/${record.id}/edit`}
                               className="btn btn-secondary btn-sm"

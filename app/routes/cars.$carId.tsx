@@ -3,7 +3,7 @@ import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from
 import { useLoaderData, Link, useRouteError, isRouteErrorResponse, useSearchParams, Form, useNavigation } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { formatMaintenanceType, formatDate, formatCurrency, formatMileage } from "~/utils/format";
-import { getCarById, updateCarMileage } from "~/models/car.server";
+import { getCarById, updateCarMileage, archiveCar, restoreCar } from "~/models/car.server";
 import { getMaintenanceDue, getServiceIntervalStatus } from "~/models/maintenance.server";
 import MaintenanceList from "~/components/MaintenanceList";
 
@@ -34,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ])
   );
 
-  return json({ car, due, isOwner, intervalStatus, forecast });
+  return json({ car, due, isOwner, intervalStatus, forecast, isArchived: car.isArchived });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -50,6 +50,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
     try {
       await updateCarMileage(carId, newMileage, userId);
+      return redirect(`/cars/${carId}`);
+    } catch (e) {
+      return json({ error: (e as Error).message }, { status: 403 });
+    }
+  }
+
+  if (intent === "archive") {
+    try {
+      await archiveCar(carId, userId);
+      return redirect("/cars");
+    } catch (e) {
+      return json({ error: (e as Error).message }, { status: 403 });
+    }
+  }
+
+  if (intent === "restore") {
+    try {
+      await restoreCar(carId, userId);
       return redirect(`/cars/${carId}`);
     } catch (e) {
       return json({ error: (e as Error).message }, { status: 403 });
@@ -78,7 +96,7 @@ function sortRecords(
 }
 
 export default function CarDetail() {
-  const { car, due, isOwner, intervalStatus, forecast } = useLoaderData<typeof loader>();
+  const { car, due, isOwner, intervalStatus, forecast, isArchived } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
@@ -165,6 +183,11 @@ export default function CarDetail() {
 
   return (
     <div>
+      {isArchived && (
+        <div className="alert alert-info mb-2">
+          <span>📦 This car is archived and hidden from your cars list. <strong>Restore it</strong> to make it active again.</span>
+        </div>
+      )}
       <div className="page-header">
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -184,11 +207,28 @@ export default function CarDetail() {
           <Link to={`/cars/${car.id}/maintenance/new`} className="btn btn-primary">
             + Add Maintenance
           </Link>
+          <Link to={`/cars/${car.id}/odometer`} className="btn btn-secondary">
+            📊 Odometer Log
+          </Link>
           {isOwner && (
             <>
               <Link to={`/cars/${car.id}/edit`} className="btn btn-secondary">Edit</Link>
               <Link to={`/cars/${car.id}/members`} className="btn btn-secondary">Members</Link>
               <Link to={`/cars/${car.id}/delete`} className="btn btn-danger">Delete</Link>
+              {!isArchived && (
+                <Form method="post" style={{ display: "inline" }} onSubmit={(e) => {
+                  if (!window.confirm("Archive this car? It will be hidden from your cars list. You can restore it later.")) e.preventDefault();
+                }}>
+                  <input type="hidden" name="intent" value="archive" />
+                  <button type="submit" className="btn btn-secondary">📦 Archive</button>
+                </Form>
+              )}
+              {isArchived && (
+                <Form method="post" style={{ display: "inline" }}>
+                  <input type="hidden" name="intent" value="restore" />
+                  <button type="submit" className="btn btn-primary">↩ Restore</button>
+                </Form>
+              )}
             </>
           )}
         </div>
@@ -234,6 +274,8 @@ export default function CarDetail() {
               <tr><th>Make</th><td>{car.make}</td></tr>
               <tr><th>Model</th><td>{car.model}</td></tr>
               <tr><th>Year</th><td>{car.year}</td></tr>
+              {car.vin && <tr><th>VIN</th><td style={{ fontFamily: "monospace", letterSpacing: "0.05em" }}>{car.vin}</td></tr>}
+              {car.color && <tr><th>Color</th><td>{car.color}</td></tr>}
               <tr><th>Current Mileage</th><td>{formatMileage(car.currentMileage)}</td></tr>
               {car.purchaseCost != null && <tr><th>Purchase Cost</th><td>{formatCurrency(car.purchaseCost)}</td></tr>}
               {car.vendor && <tr><th>Vendor</th><td>{car.vendor}</td></tr>}

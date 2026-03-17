@@ -231,3 +231,68 @@ To show a notification badge in the navbar, add the due-count computation direct
 ## Analytics Pages with Pure CSS Bar Charts
 
 For simple analytics visualizations, avoid external charting libraries. Use `<div>` elements with `width: X%` and `background: color` to render horizontal bars. Calculate `width = (value / maxValue) * 100`. For vertical bars, use `height` instead and a flex column-reverse container. This works offline (no CDN), renders SSR, and prints cleanly.
+
+## Accurate Month Difference Calculation
+
+Using millisecond division by `(1000 * 60 * 60 * 24 * 30)` for month differences is imprecise (months vary from 28-31 days). Use a `monthsDiff(from, to)` helper instead:
+```ts
+function monthsDiff(from: Date, to: Date): number {
+  return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+}
+```
+This gives exact calendar-month differences regardless of month length. Apply to all maintenance due calculations.
+
+## Date Range Filter: Use Exclusive Upper Bound
+
+When filtering by a "to date" where the user picks a calendar date (not datetime), using `lte: new Date(dateStr).setHours(23,59,59,999)` is fragile. Instead, advance to the next day and use an exclusive `lt`:
+```ts
+const dateTo = new Date(dateToStr);
+dateTo.setDate(dateTo.getDate() + 1);
+dateTo.setHours(0, 0, 0, 0);
+where.date = { ...(where.date ?? {}), lt: dateTo };
+```
+This correctly includes all records on the selected last day, regardless of their exact timestamp.
+
+## Root Loader: Guard Expensive Queries for Unauthenticated Users
+
+The root.tsx loader runs on every navigation. When it computes a notification badge count (e.g., due maintenance), those DB queries are wasteful for unauthenticated page loads (login, signup, etc.). Always add an early return:
+```ts
+const userId = await getUserId(request);
+if (!userId) return json({ isLoggedIn: false, userName: null, dueCount: 0 });
+```
+This avoids all DB queries on pages that don't need auth state.
+
+## Maintenance Forecast Pattern
+
+To show "Next due: ~X,XXX mi" on service cards, derive it from intervalStatus data already loaded in the loader (no extra DB call needed). The intervalStatus objects contain nextMileage and nextDate fields computed from last record + interval. Build a Map<typeName, forecast> inline for O(1) lookup in the UI.
+
+## NearbyServicesAlert: async/await with Promise-wrapped Geolocation
+
+`navigator.geolocation.getCurrentPosition` uses callbacks, not Promises. Wrap it:
+```ts
+const position = await new Promise<GeolocationPosition>((resolve, reject) =>
+  navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
+);
+```
+Then use `async/await` with a single `try/catch/finally`. Put `setLoading(false)` in `finally` so it always runs, even if `.json()` parse fails.
+
+
+## Dark Mode with CSS Custom Properties
+
+To add dark mode without JavaScript, use CSS custom properties and `@media (prefers-color-scheme: dark)`. Define all color variables in `:root`, then override in the dark media query. Apply variables to all theme-sensitive rules (backgrounds, text, borders). Alert colors and primary button colors can stay hardcoded. This approach works in Remix's inline `globalStyles` string pattern without any extra libraries.
+
+## Car Archive Pattern Instead of Hard Delete
+
+To let users "decommission" a car without losing data, add `isArchived Boolean @default(false)` to the Car model. Modify `getCarsForUser` to accept `includeArchived = false` so archived cars are excluded from all maintenance calculations by default. Add `archiveCar` / `restoreCar` server functions. Show archived cars in a separate section on the cars list page. This prevents data loss when a car is sold or retired.
+
+## OdometerLog: Tracking Mileage Over Time
+
+The Car model stores `currentMileage` as a point-in-time value, not history. Adding an `OdometerLog` model (id, carId, mileage, note, recordedAt) creates a historical mileage timeline. This enables trend visualization (simple bar chart from sorted logs), mileage diff display between readings, and a historical record useful for insurance or resale documentation.
+
+## VIN Validation Pattern
+
+VINs are 17-character alphanumeric strings (no I, O, Q). For a pragmatic validation:
+1. Auto-uppercase input on the server: `rawVin.trim().toUpperCase()`
+2. Length check: `vin.length > 17`
+3. Character check: `/^[A-Z0-9]+$/`
+This is sufficient for basic data quality without requiring a full VIN decoder library.

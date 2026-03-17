@@ -14,9 +14,11 @@ export function meta() {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
-  const cars = await getCarsForUser(userId);
+  const allCars = await getCarsForUser(userId, true);
+  const activeCars = allCars.filter(c => !c.isArchived);
+  const archivedCars = allCars.filter(c => c.isArchived);
 
-  const carIds = cars.map((c) => c.id);
+  const carIds = activeCars.map((c) => c.id);
 
   const [lastRecordsRaw, countGroupsRaw] = await Promise.all([
     carIds.length > 0
@@ -48,10 +50,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const dueMap = await getBatchMaintenanceDue(
-    cars.map((c) => ({ id: c.id, currentMileage: c.currentMileage }))
+    activeCars.map((c) => ({ id: c.id, currentMileage: c.currentMileage }))
   );
 
-  const carsWithDue = cars.map((car) => ({
+  const carsWithDue = activeCars.map((car) => ({
     car,
     dueCount: (dueMap.get(car.id) ?? []).length,
     dueTypes: (dueMap.get(car.id) ?? []).map((d) => d.type),
@@ -70,11 +72,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     totalCost = costAgg._sum.cost ?? 0;
   }
 
-  return json({ carsWithDue, totalRecords, totalCost });
+  return json({ carsWithDue, totalRecords, totalCost, archivedCars: archivedCars.map(c => ({ id: c.id, make: c.make, model: c.model, year: c.year })) });
 }
 
 export default function CarsIndex() {
-  const { carsWithDue, totalRecords, totalCost } = useLoaderData<typeof loader>();
+  const { carsWithDue, totalRecords, totalCost, archivedCars } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
 
   const filteredCars = useMemo(() => {
@@ -150,6 +152,20 @@ export default function CarsIndex() {
             </div>
           )}
         </>
+      )}
+      {archivedCars.length > 0 && (
+        <div className="card mt-2" style={{ borderLeft: "4px solid #94a3b8" }}>
+          <h2 style={{ color: "#64748b" }}>📦 Archived Cars ({archivedCars.length})</h2>
+          <p className="text-muted text-sm mb-2">These cars are archived and excluded from maintenance calculations.</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            {archivedCars.map(c => (
+              <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem", background: "#f8fafc", borderRadius: "6px" }}>
+                <span>{c.year} {c.make} {c.model}</span>
+                <a href={`/cars/${c.id}`} className="btn btn-secondary btn-sm">View / Restore</a>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

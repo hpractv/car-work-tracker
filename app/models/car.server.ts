@@ -1,9 +1,10 @@
 import { db } from "~/db.server";
 
-export async function getCarsForUser(userId: string) {
+export async function getCarsForUser(userId: string, includeArchived = false) {
   return db.car.findMany({
     where: {
       members: { some: { userId } },
+      ...(includeArchived ? {} : { isArchived: false }),
     },
     include: {
       members: { include: { user: true } },
@@ -36,6 +37,8 @@ export async function createCar(
     description?: string | null;
     imageUrl?: string | null;
     notes?: string | null;
+    vin?: string | null;
+    color?: string | null;
   },
   userId: string
 ){
@@ -61,6 +64,9 @@ export async function updateCar(
     description?: string | null;
     imageUrl?: string | null;
     notes?: string | null;
+    vin?: string | null;
+    color?: string | null;
+    isArchived?: boolean;
   },
   userId: string
 ){
@@ -152,4 +158,40 @@ export async function updateCarMileage(carId: string, newMileage: number, userId
     where: { id: carId },
     data: { currentMileage: newMileage },
   });
+}
+
+export async function archiveCar(carId: string, userId: string) {
+  const membership = await db.carMember.findFirst({
+    where: { carId, userId, role: "owner" },
+  });
+  if (!membership) throw new Error("Not authorized to archive this car");
+  return db.car.update({ where: { id: carId }, data: { isArchived: true } });
+}
+
+export async function restoreCar(carId: string, userId: string) {
+  const membership = await db.carMember.findFirst({
+    where: { carId, userId, role: "owner" },
+  });
+  if (!membership) throw new Error("Not authorized to restore this car");
+  return db.car.update({ where: { id: carId }, data: { isArchived: false } });
+}
+
+export async function getOdometerLogs(carId: string) {
+  return db.odometerLog.findMany({
+    where: { carId },
+    orderBy: { recordedAt: "desc" },
+  });
+}
+
+export async function addOdometerLog(carId: string, mileage: number, note: string | null, userId: string) {
+  if (mileage < 0) throw new Error("Mileage cannot be negative");
+  const membership = await db.carMember.findFirst({ where: { carId, userId } });
+  if (!membership) throw new Error("Not authorized");
+  return db.odometerLog.create({ data: { carId, mileage, note } });
+}
+
+export async function deleteOdometerLog(logId: string, carId: string, userId: string) {
+  const membership = await db.carMember.findFirst({ where: { carId, userId } });
+  if (!membership) throw new Error("Not authorized");
+  return db.odometerLog.deleteMany({ where: { id: logId, carId } });
 }

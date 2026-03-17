@@ -19,7 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const records = car.maintenanceRecords; // already ordered by date desc
 
-  const headers = ["Date", "Type", "Mileage", "Cost ($)", "Vendor", "Notes"];
+  const headers = ["Date", "Type", "Mileage", "Cost ($)", "Vendor", "Notes", "Receipt URL"];
   const rows = records.map((r) => [
     escapeCsvField(new Date(r.date).toISOString().split("T")[0]),
     escapeCsvField(formatMaintenanceType(r.type)),
@@ -27,6 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     escapeCsvField(r.cost != null ? r.cost.toFixed(2) : ""),
     escapeCsvField(r.vendor),
     escapeCsvField(r.description),
+    escapeCsvField(r.receiptUrl),
   ]);
 
   const csvContent = [

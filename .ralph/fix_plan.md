@@ -136,21 +136,32 @@
 - [x] Add printable maintenance history report per car (print button + CSS)
 - [x] Add global search route /search (across cars and records)
 
-## 🔧 In Progress - Phase 15: Loop 10 Bug Fixes & Enhancements
+## ✅ Completed - Phase 15: Loop 10 Bug Fixes & Enhancements
 
-- [ ] Fix date range off-by-one in maintenance._index.tsx (use lt + next day instead of lte + 23:59:59)
-- [ ] Fix type filter partial match in maintenance._index.tsx (use exact equals, not contains)
-- [ ] Improve maintenance history UX: aria-sort, clear filtered vs total labels
-- [ ] Fix search.tsx: trim whitespace before length check, show total count with truncation notice
-- [ ] Optimize root.tsx loader: skip due count for unauthenticated users
-- [ ] Add OfflineIndicator to root.tsx navbar
-- [ ] Fix NearbyServicesAlert: move setLoading(false) to finally block, catch .json() parse errors
-- [ ] Enhance reports: add YoY % change labels, fix division by zero on cost/mile
-- [ ] Fix maintenance.server.ts month math: use accurate getFullYear/getMonth diff instead of 30-day ms approximation
-- [ ] Add getMaintenanceForecast() to maintenance.server.ts
-- [ ] Add maintenance forecasting to cars.$carId.tsx service schedule cards
-- [ ] Fix car.server.ts: email format validation in addCarMember, negative mileage guard
+- [x] Fix date range off-by-one in maintenance._index.tsx (use lt + next day instead of lte + 23:59:59)
+- [x] Fix type filter partial match in maintenance._index.tsx (use exact equals, not contains)
+- [x] Improve maintenance history UX: aria-sort, clear filtered vs total labels
+- [x] Fix search.tsx: trim whitespace before length check, show total count with truncation notice
+- [x] Optimize root.tsx loader: skip due count for unauthenticated users
+- [x] Add OfflineIndicator to root.tsx navbar
+- [x] Fix NearbyServicesAlert: move setLoading(false) to finally block, catch .json() parse errors
+- [x] Enhance reports: add YoY % change labels, fix division by zero on cost/mile
+- [x] Fix maintenance.server.ts month math: use accurate getFullYear/getMonth diff instead of 30-day ms approximation
+- [x] Add getMaintenanceForecast() to maintenance.server.ts
+- [x] Add maintenance forecasting to cars.$carId.tsx service schedule cards
+- [x] Fix car.server.ts: email format validation in addCarMember, negative mileage guard
+
+## ✅ Completed - Phase 16: Loop 11 New Features & Improvements
+- [x] Fix root.tsx monthsDiff bug — replaced 30-day approximation with accurate calendar monthsDiff helper (matches maintenance.server.ts)
+- [x] Add dark mode CSS — CSS custom properties with prefers-color-scheme media query for full dark theme support
+- [x] Add VIN and color fields to Car schema — vin String?, color String?, forms, CarCard, car detail display
+- [x] Add car archive/decommission — isArchived Boolean @default(false), archiveCar/restoreCar server functions, archive button on car detail, archived section on cars list
+- [x] Add OdometerLog model and /cars/:carId/odometer route — track mileage readings over time with trend chart
+- [x] Improve CSV exports — add VIN, Color, Receipt URL columns to both fleet-wide and per-car CSV exports
+- [x] Enhance reports page — service frequency table, 24-month trend, top 5 expensive services
+- [x] Add receipt URL links to global maintenance history page (/maintenance)
 
 ## 📋 Future Improvements
 - [ ] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration
 - [ ] Add push notification support for maintenance due reminders
+- [ ] Add per-car maintenance interval overrides (CarMaintenanceOverride model)

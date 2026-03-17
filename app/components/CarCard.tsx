@@ -9,6 +9,7 @@ interface CarCardProps {
     year: number;
     currentMileage: number;
     vendor?: string | null;
+    color?: string | null;
   };
   imageUrl?: string | null;
   dueCount?: number;
@@ -52,6 +53,7 @@ export default function CarCard({ car, imageUrl, dueCount, dueTypes, lastService
       <p className="text-muted text-sm">
         {car.currentMileage.toLocaleString()} miles
         {car.vendor ? ` · ${car.vendor}` : ""}
+        {car.color && <span style={{ marginLeft: "0.35rem", padding: "0.1rem 0.4rem", background: "#f1f5f9", borderRadius: "4px", fontSize: "0.75rem" }}>{car.color}</span>}
       </p>
       {(lastServiceDate || (totalRecords !== undefined && totalRecords > 0)) && (
         <p className="text-muted text-sm">

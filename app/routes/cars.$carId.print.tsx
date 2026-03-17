@@ -58,6 +58,8 @@ export default function PrintMaintenance() {
           <div>
             <h3 style={{ margin: "0 0 0.5rem", color: "#334155" }}>{car.year} {car.make} {car.model}</h3>
             <p style={{ margin: "0.2rem 0", fontSize: "0.9rem" }}><strong>Current Mileage:</strong> {car.currentMileage.toLocaleString()} miles</p>
+            {car.vin && <p style={{ margin: "0.2rem 0", fontSize: "0.9rem" }}><strong>VIN:</strong> <span style={{ fontFamily: "monospace", letterSpacing: "0.05em" }}>{car.vin}</span></p>}
+            {car.color && <p style={{ margin: "0.2rem 0", fontSize: "0.9rem" }}><strong>Color:</strong> {car.color}</p>}
             {car.vendor && <p style={{ margin: "0.2rem 0", fontSize: "0.9rem" }}><strong>Purchased From:</strong> {car.vendor}</p>}
             {car.purchaseCost && <p style={{ margin: "0.2rem 0", fontSize: "0.9rem" }}><strong>Purchase Price:</strong> ${car.purchaseCost.toFixed(2)}</p>}
           </div>

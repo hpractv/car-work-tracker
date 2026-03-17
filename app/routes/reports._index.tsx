@@ -113,23 +113,73 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // ── Monthly trend (last 24 months) ───────────────────────────────────────
   const now = new Date();
-  const monthlyMap = new Map<string, { key: string; year: number; month: number; totalCost: number }>();
+  const monthlyMap = new Map<string, { key: string; year: number; month: number; label: string; totalCost: number; count: number }>();
 
   for (let i = 23; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    monthlyMap.set(key, { key, year: d.getFullYear(), month: d.getMonth() + 1, totalCost: 0 });
+    const label = d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+    monthlyMap.set(key, { key, year: d.getFullYear(), month: d.getMonth() + 1, label, totalCost: 0, count: 0 });
   }
 
   for (const rec of records) {
     const d = new Date(rec.date);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     if (monthlyMap.has(key)) {
-      monthlyMap.get(key)!.totalCost += rec.cost ?? 0;
+      const entry = monthlyMap.get(key)!;
+      entry.totalCost += rec.cost ?? 0;
+      entry.count += 1;
     }
   }
 
   const monthlyTrend = Array.from(monthlyMap.values());
+
+  // ── Service frequency by type ────────────────────────────────────────────
+  const byTypeFrequency = new Map<string, { type: string; count: number; totalCost: number; avgDaysBetween: number | null }>();
+
+  for (const rec of records) {
+    if (!byTypeFrequency.has(rec.type)) {
+      byTypeFrequency.set(rec.type, { type: rec.type, count: 0, totalCost: 0, avgDaysBetween: null });
+    }
+    const entry = byTypeFrequency.get(rec.type)!;
+    entry.count++;
+    entry.totalCost += rec.cost ?? 0;
+  }
+
+  for (const [typeName, entry] of byTypeFrequency) {
+    const typeRecords = records
+      .filter((r) => r.type === typeName)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    if (typeRecords.length >= 2) {
+      let totalDays = 0;
+      let intervals = 0;
+      for (let i = 1; i < typeRecords.length; i++) {
+        const days =
+          (new Date(typeRecords[i].date).getTime() - new Date(typeRecords[i - 1].date).getTime()) /
+          (1000 * 60 * 60 * 24);
+        totalDays += days;
+        intervals++;
+      }
+      entry.avgDaysBetween = Math.round(totalDays / intervals);
+    }
+  }
+
+  const byTypeFrequencyArr = Array.from(byTypeFrequency.values()).sort((a, b) => b.count - a.count);
+
+  // ── Top 5 most expensive single services ─────────────────────────────────
+  const topExpensiveRecords = records
+    .filter((r) => r.cost != null)
+    .sort((a, b) => (b.cost ?? 0) - (a.cost ?? 0))
+    .slice(0, 5)
+    .map((r) => ({
+      id: r.id,
+      carId: r.carId,
+      carLabel: `${r.car.year} ${r.car.make} ${r.car.model}`,
+      type: r.type,
+      date: r.date,
+      cost: r.cost!,
+      vendor: r.vendor,
+    }));
 
   // ── Fleet summary stats ──────────────────────────────────────────────────
   const totalFleetCost = records.reduce((s, r) => s + (r.cost ?? 0), 0);
@@ -152,14 +202,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     byType,
     monthlyTrend,
     currentYear,
+    byTypeFrequencyArr,
+    topExpensiveRecords,
   });
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-
-const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export default function ReportsIndex() {
   const {
@@ -174,6 +224,8 @@ export default function ReportsIndex() {
     byType,
     monthlyTrend,
     currentYear,
+    byTypeFrequencyArr,
+    topExpensiveRecords,
   } = useLoaderData<typeof loader>();
 
   // Empty state
@@ -213,9 +265,8 @@ export default function ReportsIndex() {
     );
   }
 
-  // Monthly trend — last 12 months for the mini chart
-  const last12 = monthlyTrend.slice(-12);
-  const maxMonthCost = Math.max(...last12.map((m) => m.totalCost), 1);
+  // Monthly trend — all 24 months
+  const maxMonthCost = Math.max(...monthlyTrend.map((m) => m.totalCost), 1);
 
   // Year chart
   const maxYearCost = Math.max(...yearOverYear.map((y) => y.totalCost), 1);
@@ -518,51 +569,38 @@ export default function ReportsIndex() {
       </section>
 
       {/* ── Monthly Spending Trend ── */}
-      <section className="card" style={{ padding: "1.5rem" }}>
+      <section className="card mb-2" style={{ padding: "1.5rem" }}>
         <h2 style={{ marginBottom: "0.25rem" }}>Monthly Spending Trend</h2>
         <p className="text-muted text-sm" style={{ marginBottom: "1.5rem" }}>
-          Last 12 months of maintenance spend
+          Last 24 months of maintenance spend
         </p>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            gap: "4px",
-            height: "120px",
-            paddingBottom: "28px",
-            position: "relative",
-          }}
-        >
-          {last12.map((m) => {
+        <div>
+          {monthlyTrend.map((m) => {
             const barPct = maxMonthCost > 0 ? (m.totalCost / maxMonthCost) * 100 : 0;
-            const barHeight = Math.max(barPct * 0.9, m.totalCost > 0 ? 4 : 0);
-            const label = MONTH_ABBR[m.month - 1];
             return (
               <div
                 key={m.key}
-                title={`${label} ${m.year}: ${formatCurrency(m.totalCost)}`}
-                style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}
+                style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.25rem 0" }}
               >
-                <div
-                  style={{
-                    width: "100%",
-                    height: `${barHeight}px`,
-                    background: m.totalCost > 0 ? "#1e40af" : "#e2e8f0",
-                    borderRadius: "3px 3px 0 0",
-                    transition: "height 0.3s ease",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: 0,
-                    fontSize: "0.68rem",
-                    color: "#64748b",
-                    textAlign: "center",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {label}
+                <div style={{ minWidth: "56px", textAlign: "right", fontSize: "0.78rem", color: "#64748b" }}>
+                  {m.label}
+                </div>
+                <div style={{ flex: 1, background: "#f1f5f9", borderRadius: "4px", height: "18px" }}>
+                  <div
+                    style={{
+                      background: m.totalCost > 0 ? "#1e40af" : "transparent",
+                      width: `${barPct}%`,
+                      height: "100%",
+                      borderRadius: "4px",
+                      minWidth: m.totalCost > 0 ? "4px" : "0",
+                    }}
+                  />
+                </div>
+                <div style={{ minWidth: "90px", textAlign: "right", fontSize: "0.82rem", color: "#1e293b" }}>
+                  {m.totalCost > 0 ? formatCurrency(m.totalCost) : <span className="text-muted">—</span>}
+                </div>
+                <div style={{ minWidth: "60px", textAlign: "right", fontSize: "0.78rem", color: "#64748b" }}>
+                  {m.count > 0 ? `${m.count} record${m.count !== 1 ? "s" : ""}` : ""}
                 </div>
               </div>
             );
@@ -581,18 +619,18 @@ export default function ReportsIndex() {
           }}
         >
           {(() => {
-            const activeLast12 = last12.filter((m) => m.totalCost > 0);
-            const totalLast12 = last12.reduce((s, m) => s + m.totalCost, 0);
-            const avgMonthly = activeLast12.length > 0 ? totalLast12 / activeLast12.length : 0;
-            const peakMonth = last12.reduce(
+            const activeMonths = monthlyTrend.filter((m) => m.totalCost > 0);
+            const total24 = monthlyTrend.reduce((s, m) => s + m.totalCost, 0);
+            const avgMonthly = activeMonths.length > 0 ? total24 / activeMonths.length : 0;
+            const peakMonth = monthlyTrend.reduce(
               (best, m) => (m.totalCost > best.totalCost ? m : best),
-              last12[0]
+              monthlyTrend[0]
             );
             return (
               <>
                 <div>
-                  <div className="text-sm text-muted">12-month total</div>
-                  <div style={{ fontWeight: 700, fontSize: "1.1rem" }}>{formatCurrency(totalLast12)}</div>
+                  <div className="text-sm text-muted">24-month total</div>
+                  <div style={{ fontWeight: 700, fontSize: "1.1rem" }}>{formatCurrency(total24)}</div>
                 </div>
                 <div>
                   <div className="text-sm text-muted">Monthly avg (active months)</div>
@@ -602,8 +640,7 @@ export default function ReportsIndex() {
                   <div>
                     <div className="text-sm text-muted">Peak month</div>
                     <div style={{ fontWeight: 700, fontSize: "1.1rem" }}>
-                      {MONTH_ABBR[peakMonth.month - 1]} {peakMonth.year} &mdash;{" "}
-                      {formatCurrency(peakMonth.totalCost)}
+                      {peakMonth.label} &mdash; {formatCurrency(peakMonth.totalCost)}
                     </div>
                   </div>
                 )}
@@ -612,6 +649,114 @@ export default function ReportsIndex() {
           })()}
         </div>
       </section>
+
+      {/* ── Service Frequency by Type ── */}
+      {byTypeFrequencyArr.length > 0 && (
+        <section className="card mb-2" style={{ padding: "1.5rem" }}>
+          <h2 style={{ marginBottom: "0.25rem" }}>Service Frequency by Type</h2>
+          <p className="text-muted text-sm" style={{ marginBottom: "1.25rem" }}>
+            How often each maintenance type is performed across the fleet
+          </p>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+                  <Th>Type</Th>
+                  <Th align="right">Records</Th>
+                  <Th align="right">Avg Cost</Th>
+                  <Th align="right">Avg Interval</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {byTypeFrequencyArr.map((entry) => (
+                  <tr key={entry.type} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <Td>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          background: "#eff6ff",
+                          color: "#1e40af",
+                          borderRadius: "4px",
+                          padding: "2px 8px",
+                          fontSize: "0.82rem",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {formatMaintenanceType(entry.type)}
+                      </span>
+                    </Td>
+                    <Td align="right">{entry.count}</Td>
+                    <Td align="right">
+                      {entry.count > 0 ? formatCurrency(entry.totalCost / entry.count) : "—"}
+                    </Td>
+                    <Td align="right">
+                      {entry.avgDaysBetween != null ? (
+                        `~${entry.avgDaysBetween} days`
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* ── Most Expensive Services ── */}
+      {topExpensiveRecords.length > 0 && (
+        <section className="card" style={{ padding: "1.5rem" }}>
+          <h2 style={{ marginBottom: "0.25rem" }}>Most Expensive Services</h2>
+          <p className="text-muted text-sm" style={{ marginBottom: "1.25rem" }}>
+            Top 5 most expensive individual maintenance records
+          </p>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+                  <Th>Date</Th>
+                  <Th>Car</Th>
+                  <Th>Type</Th>
+                  <Th>Vendor</Th>
+                  <Th align="right">Cost</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {topExpensiveRecords.map((rec) => (
+                  <tr key={rec.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <Td>{formatDate(rec.date)}</Td>
+                    <Td>
+                      <a href={`/cars/${rec.carId}`} style={{ color: "#1e40af", textDecoration: "none", fontWeight: 500 }}>
+                        {rec.carLabel}
+                      </a>
+                    </Td>
+                    <Td>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          background: "#eff6ff",
+                          color: "#1e40af",
+                          borderRadius: "4px",
+                          padding: "2px 8px",
+                          fontSize: "0.82rem",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {formatMaintenanceType(rec.type)}
+                      </span>
+                    </Td>
+                    <Td>{rec.vendor ?? <span className="text-muted">—</span>}</Td>
+                    <Td align="right">
+                      <strong>{formatCurrency(rec.cost)}</strong>
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
