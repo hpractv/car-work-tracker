@@ -1,8 +1,8 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useRouteError, isRouteErrorResponse } from "@remix-run/react";
+import { useLoaderData, useRouteError, isRouteErrorResponse, Link } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
-import { getCarsForUser } from "~/models/car.server";
-import { getBatchMaintenanceDue, getBatchMaintenanceApproaching } from "~/models/maintenance.server";
+import { getCarsForUser, getExpiringDocuments, getExpiredDocuments } from "~/models/car.server";
+import { getBatchMaintenanceDue, getBatchMaintenanceApproaching, getBatchMaintenanceHealthScores } from "~/models/maintenance.server";
 import { getUserById } from "~/models/user.server";
 import { db } from "~/db.server";
 import { formatMaintenanceType, formatDate } from "~/utils/format";
@@ -46,16 +46,40 @@ export async function loader({ request }: LoaderFunctionArgs) {
     recordCountsByCarId.set(group.carId, group._count.id);
   }
 
-  const [dueMap, approachingMap] = await Promise.all([
+  const [dueMap, approachingMap, healthScoreMap] = await Promise.all([
     getBatchMaintenanceDue(cars.map((c) => ({ id: c.id, currentMileage: c.currentMileage }))),
     getBatchMaintenanceApproaching(cars.map((c) => ({ id: c.id, currentMileage: c.currentMileage }))),
+    getBatchMaintenanceHealthScores(cars.map((c) => ({ id: c.id, currentMileage: c.currentMileage }))),
   ]);
+
+  const now = new Date();
+  const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const allCarDocs = carIds.length > 0
+    ? await db.carDocument.findMany({
+        where: { carId: { in: carIds }, expiryDate: { not: null } },
+        select: { carId: true, expiryDate: true },
+      })
+    : [];
+
+  const docStatusByCar = new Map<string, { expired: number; expiring: number }>();
+  for (const doc of allCarDocs) {
+    if (!doc.expiryDate) continue;
+    const entry = docStatusByCar.get(doc.carId) ?? { expired: 0, expiring: 0 };
+    if (doc.expiryDate < now) {
+      entry.expired++;
+    } else if (doc.expiryDate < in30Days) {
+      entry.expiring++;
+    }
+    docStatusByCar.set(doc.carId, entry);
+  }
 
   const carsWithDue = cars.map((car) => ({
     car,
     due: dueMap.get(car.id) ?? [],
     lastServiceDate: lastRecordsByCarId.get(car.id) ?? null,
     totalRecords: recordCountsByCarId.get(car.id) ?? 0,
+    healthScore: healthScoreMap.get(car.id) ?? null,
+    docStatus: docStatusByCar.get(car.id) ?? { expired: 0, expiring: 0 },
   }));
 
   const recentRecords = await db.maintenanceRecord.findMany({
@@ -80,16 +104,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const totalCost = costAggregate._sum.cost ?? 0;
   const carsWithDueCount = carsWithDue.filter((c) => c.due.length > 0).length;
 
+  const healthScores = carsWithDue.map((c) => c.healthScore).filter((s): s is number => s !== null);
+  const fleetHealthScore: number | null = healthScores.length > 0
+    ? Math.round(healthScores.reduce((sum, s) => sum + s, 0) / healthScores.length)
+    : null;
+
   const carsWithApproaching = cars.map((car) => ({
     car,
     approaching: approachingMap.get(car.id) ?? [],
   }));
 
-  return json({ user, carsWithDue, carsWithApproaching, recentRecords, totalCars, totalRecords, totalCost, carsWithDueCount });
+  const [expiringDocs, expiredDocs] = await Promise.all([
+    carIds.length > 0 ? getExpiringDocuments(carIds, 30) : Promise.resolve([]),
+    carIds.length > 0 ? getExpiredDocuments(carIds) : Promise.resolve([]),
+  ]);
+
+  return json({ user, carsWithDue, carsWithApproaching, recentRecords, totalCars, totalRecords, totalCost, carsWithDueCount, fleetHealthScore, expiringDocs, expiredDocs });
 }
 
 export default function Index() {
-  const { user, carsWithDue, carsWithApproaching, recentRecords, totalCars, totalRecords, totalCost, carsWithDueCount } = useLoaderData<typeof loader>();
+  const { user, carsWithDue, carsWithApproaching, recentRecords, totalCars, totalRecords, totalCost, carsWithDueCount, fleetHealthScore, expiringDocs, expiredDocs } = useLoaderData<typeof loader>();
 
   const allDue = carsWithDue.flatMap((c) => c.due);
 
@@ -130,6 +164,12 @@ export default function Index() {
               <div className="text-muted text-sm">Need Service</div>
             </div>
           )}
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "1.75rem", fontWeight: 700, color: fleetHealthScore === null ? "#94a3b8" : fleetHealthScore >= 90 ? "#16a34a" : fleetHealthScore >= 70 ? "#65a30d" : fleetHealthScore >= 50 ? "#d97706" : "#dc2626" }}>
+              {fleetHealthScore === null ? "N/A" : `${fleetHealthScore}%`}
+            </div>
+            <div className="text-muted text-sm">Fleet Health</div>
+          </div>
         </div>
       )}
 
@@ -167,10 +207,54 @@ export default function Index() {
             </div>
           )}
 
+          {expiredDocs.length > 0 && (
+            <div className="card" style={{ borderLeft: "4px solid #dc2626" }}>
+              <h2 style={{ color: "#dc2626" }}>🔴 Expired Documents</h2>
+              <ul style={{ margin: "0.5rem 0 0 0", listStyle: "none", padding: 0 }}>
+                {expiredDocs.map((doc) => (
+                  <li key={doc.id} className="text-sm" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.25rem 0", borderBottom: "1px solid var(--border)" }}>
+                    <span>
+                      <Link to={`/cars/${doc.car.id}/documents`}>
+                        {doc.car.year} {doc.car.make} {doc.car.model}
+                      </Link>{" "}
+                      — <strong>{doc.title}</strong>{" "}
+                      <span className="badge" style={{ background: "#fee2e2", color: "#7f1d1d" }}>{doc.type}</span>
+                    </span>
+                    <span className="text-muted" style={{ marginLeft: "0.5rem", whiteSpace: "nowrap" }}>
+                      Expired {formatDate(doc.expiryDate!)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {expiringDocs.length > 0 && (
+            <div className="card" style={{ borderLeft: "4px solid #f59e0b" }}>
+              <h2 style={{ color: "#92400e" }}>🟡 Documents Expiring Soon</h2>
+              <ul style={{ margin: "0.5rem 0 0 0", listStyle: "none", padding: 0 }}>
+                {expiringDocs.map((doc) => (
+                  <li key={doc.id} className="text-sm" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.25rem 0", borderBottom: "1px solid var(--border)" }}>
+                    <span>
+                      <Link to={`/cars/${doc.car.id}/documents`}>
+                        {doc.car.year} {doc.car.make} {doc.car.model}
+                      </Link>{" "}
+                      — <strong>{doc.title}</strong>{" "}
+                      <span className="badge" style={{ background: "#fef3c7", color: "#92400e" }}>{doc.type}</span>
+                    </span>
+                    <span className="text-muted" style={{ marginLeft: "0.5rem", whiteSpace: "nowrap" }}>
+                      Expires {formatDate(doc.expiryDate!)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <h2>Your Cars</h2>
           <div className="grid">
-            {carsWithDue.map(({ car, due, lastServiceDate, totalRecords }) => (
-              <CarCard key={car.id} car={car} imageUrl={car.imageUrl} dueCount={due.length} dueTypes={due.map(d => d.type)} lastServiceDate={lastServiceDate} totalRecords={totalRecords} />
+            {carsWithDue.map(({ car, due, lastServiceDate, totalRecords, healthScore, docStatus }) => (
+              <CarCard key={car.id} car={car} imageUrl={car.imageUrl} dueCount={due.length} dueTypes={due.map(d => d.type)} lastServiceDate={lastServiceDate} totalRecords={totalRecords} healthScore={healthScore} docStatus={docStatus} />
             ))}
           </div>
 

@@ -5,7 +5,7 @@ import {
   type LoaderFunctionArgs,
 } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
-import { getUserId, createUserSession } from "~/session.server";
+import { getUserId, createUserSession, safeRedirect } from "~/session.server";
 import { verifyLogin } from "~/models/user.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -20,7 +20,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const redirectTo = String(formData.get("redirectTo") ?? "/");
+  const redirectTo = safeRedirect(String(formData.get("redirectTo") ?? "/"));
 
   if (!email || !password) {
     return json({ error: "Email and password are required" }, { status: 400 });

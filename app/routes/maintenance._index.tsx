@@ -1,4 +1,5 @@
-﻿import { json, type LoaderFunctionArgs } from "@remix-run/node";
+﻿import { useState } from "react";
+import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Link, useRouteError, isRouteErrorResponse, Form, useSearchParams } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { getCarsForUser } from "~/models/car.server";
@@ -97,7 +98,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const orderByField = validSortFields.includes(sortField) ? sortField : "date";
   const orderBy = { [orderByField]: sortDir };
 
-  const totalCount = await db.maintenanceRecord.count({ where });
+  const totalCount= await db.maintenanceRecord.count({ where });
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
 
@@ -156,8 +157,21 @@ export default function MaintenanceIndex() {
   } = useLoaderData<typeof loader>();
 
   const [searchParams] = useSearchParams();
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
+
+  function toggleNote(id: string) {
+    setExpandedNotes(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const hasFilters = !!(selectedCarId || typeFilter || dateFrom || dateTo || search);
+
+  const csvSearchParams = new URLSearchParams(searchParams);
+  csvSearchParams.set("format", "csv");
 
   function buildPageUrl(p: number) {
     const params = new URLSearchParams(searchParams);
@@ -194,7 +208,15 @@ export default function MaintenanceIndex() {
           <h1>Maintenance History</h1>
           <p className="text-muted">All service records across your fleet</p>
         </div>
-        <Link to="/" className="btn btn-secondary">&larr; Dashboard</Link>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <a href={`/maintenance/export?${csvSearchParams.toString()}`} className="btn btn-secondary btn-sm">
+            ⬇ CSV
+          </a>
+          <a href={`/maintenance/export-json?${csvSearchParams.toString()}`} className="btn btn-secondary btn-sm">
+            ⬇ JSON
+          </a>
+          <Link to="/" className="btn btn-secondary btn-sm">&larr; Dashboard</Link>
+        </div>
       </div>
 
       {totalCount === 0 && !hasFilters ? (
@@ -364,8 +386,36 @@ export default function MaintenanceIndex() {
                           {record.cost != null ? formatCurrency(record.cost) : "\u2014"}
                         </td>
                         <td>{record.vendor ?? "\u2014"}</td>
-                        <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {record.description ?? "\u2014"}
+                        <td style={{ maxWidth: "200px" }}>
+                          {record.description ? (
+                            record.description.length > 50 && !expandedNotes.has(record.id) ? (
+                              <span>
+                                {record.description.slice(0, 47)}...{" "}
+                                <button
+                                  type="button"
+                                  onClick={() => toggleNote(record.id)}
+                                  style={{ background: "none", border: "none", cursor: "pointer", color: "#1e40af", fontSize: "0.75rem", padding: 0 }}
+                                >
+                                  more
+                                </button>
+                              </span>
+                            ) : record.description.length > 50 ? (
+                              <span>
+                                {record.description}{" "}
+                                <button
+                                  type="button"
+                                  onClick={() => toggleNote(record.id)}
+                                  style={{ background: "none", border: "none", cursor: "pointer", color: "#1e40af", fontSize: "0.75rem", padding: 0 }}
+                                >
+                                  less
+                                </button>
+                              </span>
+                            ) : (
+                              record.description
+                            )
+                          ) : (
+                            "\u2014"
+                          )}
                         </td>
                         <td style={{ whiteSpace: "nowrap" }}>
                           <div className="flex gap-sm">

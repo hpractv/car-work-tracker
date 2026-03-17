@@ -32,3 +32,42 @@ export function formatCurrency(amount: number): string {
 export function formatMileage(miles: number): string {
   return `${miles.toLocaleString()} miles`;
 }
+
+const MAINTENANCE_CATEGORIES: Record<string, string> = {
+  // Fluids
+  oil_change: "Fluids",
+  coolant_flush: "Fluids",
+  transmission_fluid: "Fluids",
+  brake_fluid: "Fluids",
+  power_steering_fluid: "Fluids",
+  differential_fluid: "Fluids",
+  // Tires & Wheels
+  tire_rotation: "Tires & Wheels",
+  tire_replacement: "Tires & Wheels",
+  wheel_alignment: "Tires & Wheels",
+  wheel_balancing: "Tires & Wheels",
+  // Brakes
+  brake_service: "Brakes",
+  brake_pad_replacement: "Brakes",
+  brake_rotor_replacement: "Brakes",
+  // Engine
+  air_filter: "Engine",
+  cabin_filter: "Engine",
+  spark_plug: "Engine",
+  timing_belt: "Engine",
+  timing_chain: "Engine",
+  fuel_filter: "Engine",
+  serpentine_belt: "Engine",
+  // Electrical
+  battery_replacement: "Electrical",
+  alternator: "Electrical",
+  // Body & Exterior
+  windshield_wiper: "Body & Exterior",
+  // General
+  inspection: "General",
+  detailing: "General",
+};
+
+export function getMaintenanceCategory(typeName: string): string {
+  return MAINTENANCE_CATEGORIES[typeName] ?? "Other";
+}

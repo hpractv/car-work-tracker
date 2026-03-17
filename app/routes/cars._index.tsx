@@ -3,7 +3,7 @@ import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Link, useRouteError, isRouteErrorResponse } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { getCarsForUser } from "~/models/car.server";
-import { getBatchMaintenanceDue } from "~/models/maintenance.server";
+import { getBatchMaintenanceDue, getBatchMaintenanceHealthScores } from "~/models/maintenance.server";
 import { db } from "~/db.server";
 import CarCard from "~/components/CarCard";
 import { formatCurrency } from "~/utils/format";
@@ -49,9 +49,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
     recordCountsByCarId.set(group.carId, group._count.id);
   }
 
-  const dueMap = await getBatchMaintenanceDue(
-    activeCars.map((c) => ({ id: c.id, currentMileage: c.currentMileage }))
-  );
+  const [dueMap, healthScoreMap] = await Promise.all([
+    getBatchMaintenanceDue(activeCars.map((c) => ({ id: c.id, currentMileage: c.currentMileage }))),
+    getBatchMaintenanceHealthScores(activeCars.map((c) => ({ id: c.id, currentMileage: c.currentMileage }))),
+  ]);
+
+  const now = new Date();
+  const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const allDocs = carIds.length > 0
+    ? await db.carDocument.findMany({
+        where: { carId: { in: carIds }, expiryDate: { not: null } },
+        select: { carId: true, expiryDate: true },
+      })
+    : [];
+
+  const docStatusByCarId = new Map<string, { expired: number; expiring: number }>();
+  for (const doc of allDocs) {
+    if (!doc.expiryDate) continue;
+    const entry = docStatusByCarId.get(doc.carId) ?? { expired: 0, expiring: 0 };
+    if (doc.expiryDate < now) {
+      entry.expired++;
+    } else if (doc.expiryDate < in30Days) {
+      entry.expiring++;
+    }
+    docStatusByCarId.set(doc.carId, entry);
+  }
 
   const carsWithDue = activeCars.map((car) => ({
     car,
@@ -59,6 +81,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     dueTypes: (dueMap.get(car.id) ?? []).map((d) => d.type),
     lastServiceDate: lastRecordsByCarId.get(car.id) ?? null,
     totalRecords: recordCountsByCarId.get(car.id) ?? 0,
+    healthScore: healthScoreMap.get(car.id) ?? null,
+    docStatus: docStatusByCarId.get(car.id) ?? { expired: 0, expiring: 0 },
   }));
 
   let totalRecords = 0;
@@ -94,6 +118,11 @@ export default function CarsIndex() {
       <div className="page-header">
         <h1>My Cars</h1>
         <div className="flex gap-sm" style={{ flexWrap: "wrap" }}>
+          {carsWithDue.length >= 2 && (
+            <Link to="/compare" className="btn btn-secondary">
+              ⚖ Compare Cars
+            </Link>
+          )}
           {carsWithDue.length > 0 && (
             <a href="/cars/export" className="btn btn-secondary">
               ⬇ Export All
@@ -146,8 +175,8 @@ export default function CarsIndex() {
             <p className="text-muted">No cars match your search.</p>
           ) : (
             <div className="grid">
-              {filteredCars.map(({ car, dueCount, dueTypes, lastServiceDate, totalRecords }) => (
-                <CarCard key={car.id} car={car} imageUrl={car.imageUrl} dueCount={dueCount} dueTypes={dueTypes} lastServiceDate={lastServiceDate} totalRecords={totalRecords} />
+              {filteredCars.map(({ car, dueCount, dueTypes, lastServiceDate, totalRecords, healthScore, docStatus }) => (
+                <CarCard key={car.id} car={car} imageUrl={car.imageUrl} dueCount={dueCount} dueTypes={dueTypes} lastServiceDate={lastServiceDate} totalRecords={totalRecords} healthScore={healthScore} docStatus={docStatus} />
               ))}
             </div>
           )}

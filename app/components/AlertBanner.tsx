@@ -19,7 +19,7 @@ export default function AlertBanner({
 
   return (
     <div className={`alert alert-${severity}`} role="alert">
-      <span>{icons[severity]}</span>
+      <span aria-hidden="true">{icons[severity]}</span>
       <span style={{ flex: 1 }}>{message}</span>
       <button
         onClick={() => { setDismissed(true); onDismiss?.(); }}

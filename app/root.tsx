@@ -9,6 +9,7 @@ import {
   isRouteErrorResponse,
   useLoaderData,
   Form,
+  Link,
 } from "@remix-run/react";
 import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
@@ -31,21 +32,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!userId) {
     return json({ isLoggedIn: false, userName: null, dueCount: 0 });
   }
+  const user = await db.user.findUnique({ where: { id: userId }, select: { name: true } });
   let dueCount = 0;
   try {
     const cars = await db.car.findMany({
-      where: { members: { some: { userId } } },
+      where: { members: { some: { userId } }, isArchived: false },
       select: { id: true, currentMileage: true },
     });
     if (cars.length > 0) {
       const carIds = cars.map(c => c.id);
-      const [types, records] = await Promise.all([
+      const [types, records, overrides] = await Promise.all([
         db.maintenanceType.findMany(),
         db.maintenanceRecord.findMany({
           where: { carId: { in: carIds } },
           orderBy: { date: "desc" },
           select: { carId: true, type: true, date: true, mileage: true },
         }),
+        db.carMaintenanceOverride.findMany({ where: { carId: { in: carIds } } }),
       ]);
       const recordsByCarId = new Map<string, typeof records>();
       for (const record of records) {
@@ -59,19 +62,38 @@ export async function loader({ request }: LoaderFunctionArgs) {
           if (!mt.defaultIntervalMiles && !mt.defaultIntervalMonths) continue;
           const lastRecord = carRecords.find(r => r.type === mt.name);
           if (!lastRecord) continue;
-          if (mt.defaultIntervalMiles && (car.currentMileage - lastRecord.mileage) >= mt.defaultIntervalMiles) {
+          const override = overrides.find(o => o.carId === car.id && o.typeName === mt.name);
+          const intervalMiles = override ? override.intervalMiles : mt.defaultIntervalMiles;
+          const intervalMonths = override ? override.intervalMonths : mt.defaultIntervalMonths;
+          if (intervalMiles && (car.currentMileage - lastRecord.mileage) >= intervalMiles) {
             dueCount++;
-          } else if (mt.defaultIntervalMonths) {
+          } else if (intervalMonths) {
             const monthsSince = monthsDiff(new Date(lastRecord.date), now);
-            if (monthsSince >= mt.defaultIntervalMonths) dueCount++;
+            if (monthsSince >= intervalMonths) dueCount++;
           }
         }
       }
     }
+    if (cars.length > 0) {
+      const carIds = cars.map(c => c.id);
+      const now = new Date();
+      const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const docAlerts = await db.carDocument.count({
+        where: {
+          carId: { in: carIds },
+          expiryDate: { not: null },
+          OR: [
+            { expiryDate: { lt: now } },
+            { expiryDate: { gte: now, lte: sevenDaysFromNow } },
+          ],
+        },
+      });
+      dueCount += docAlerts;
+    }
   } catch {
     dueCount = 0;
   }
-  return json({ isLoggedIn: true, userName: null, dueCount });
+  return json({ isLoggedIn: true, userName: user?.name ?? null, dueCount });
 }
 
 export function meta() {
@@ -85,11 +107,11 @@ export function meta() {
   ];
 }
 
-function NavBar({ isLoggedIn, dueCount }: { isLoggedIn: boolean; dueCount: number }) {
+function NavBar({ isLoggedIn, dueCount, userName }: { isLoggedIn: boolean; dueCount: number; userName?: string | null }) {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <nav className="navbar">
-      <a href="/" className="nav-brand">🚗 Car Work Tracker</a>
+      <Link to="/" className="nav-brand">🚗 Car Work Tracker</Link>
       <button
         className="nav-hamburger"
         aria-label="Toggle navigation"
@@ -101,7 +123,7 @@ function NavBar({ isLoggedIn, dueCount }: { isLoggedIn: boolean; dueCount: numbe
       <div className={`nav-links${menuOpen ? " nav-open" : ""}`}>
         {isLoggedIn ? (
           <>
-            <a href="/" onClick={() => setMenuOpen(false)}>
+            <Link to="/" onClick={() => setMenuOpen(false)}>
               Dashboard
               {dueCount > 0 && (
                 <span style={{
@@ -118,13 +140,15 @@ function NavBar({ isLoggedIn, dueCount }: { isLoggedIn: boolean; dueCount: numbe
                   {dueCount}
                 </span>
               )}
-            </a>
-            <a href="/cars" onClick={() => setMenuOpen(false)}>My Cars</a>
-            <a href="/maintenance" onClick={() => setMenuOpen(false)}>History</a>
-            <a href="/search" onClick={() => setMenuOpen(false)}>Search</a>
-            <a href="/reports" onClick={() => setMenuOpen(false)}>Reports</a>
-            <a href="/settings" onClick={() => setMenuOpen(false)}>Settings</a>
-            <a href="/profile" onClick={() => setMenuOpen(false)}>Profile</a>
+            </Link>
+            <Link to="/cars" onClick={() => setMenuOpen(false)}>My Cars</Link>
+            <Link to="/compare" onClick={() => setMenuOpen(false)}>Compare</Link>
+            <Link to="/maintenance" onClick={() => setMenuOpen(false)}>History</Link>
+            <Link to="/search" onClick={() => setMenuOpen(false)}>Search</Link>
+            <Link to="/reports" onClick={() => setMenuOpen(false)}>Reports</Link>
+            <Link to="/settings" onClick={() => setMenuOpen(false)}>Settings</Link>
+            {userName && <span style={{color:"rgba(255,255,255,0.7)", fontSize:"0.85rem", marginRight:"0.5rem"}}>{userName}</span>}
+            <Link to="/profile" onClick={() => setMenuOpen(false)}>Profile</Link>
             <Form method="post" action="/logout" style={{ display: "inline" }}>
               <button
                 type="submit"
@@ -147,8 +171,8 @@ function NavBar({ isLoggedIn, dueCount }: { isLoggedIn: boolean; dueCount: numbe
           </>
         ) : (
           <>
-            <a href="/login" onClick={() => setMenuOpen(false)}>Sign In</a>
-            <a href="/signup" onClick={() => setMenuOpen(false)}>Sign Up</a>
+            <Link to="/login" onClick={() => setMenuOpen(false)}>Sign In</Link>
+            <Link to="/signup" onClick={() => setMenuOpen(false)}>Sign Up</Link>
           </>
         )}
         <OfflineIndicator />
@@ -158,7 +182,7 @@ function NavBar({ isLoggedIn, dueCount }: { isLoggedIn: boolean; dueCount: numbe
 }
 
 export default function App() {
-  const { isLoggedIn, dueCount } = useLoaderData<typeof loader>();
+  const { isLoggedIn, dueCount, userName } = useLoaderData<typeof loader>();
 
   return (
     <html lang="en">
@@ -170,7 +194,7 @@ export default function App() {
         <style>{globalStyles}</style>
       </head>
       <body>
-        <NavBar isLoggedIn={isLoggedIn} dueCount={dueCount} />
+        <NavBar isLoggedIn={isLoggedIn} dueCount={dueCount} userName={userName} />
         <main className="container">
           <Outlet />
         </main>

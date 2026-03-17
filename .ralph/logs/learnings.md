@@ -295,4 +295,8 @@ VINs are 17-character alphanumeric strings (no I, O, Q). For a pragmatic validat
 1. Auto-uppercase input on the server: `rawVin.trim().toUpperCase()`
 2. Length check: `vin.length > 17`
 3. Character check: `/^[A-Z0-9]+$/`
-This is sufficient for basic data quality without requiring a full VIN decoder library.
+This is sufficient for basic data quality without requiring a full VIN decoder library.## Robust CSV exports and safe redirects
+
+Always escape CSV fields that may contain commas, quotes or newlines by wrapping them in double-quotes and doubling any internal quotes. Use CRLF line endings and the `text/csv; charset=utf-8` Content-Type with a Content-Disposition attachment header to ensure consistent downloads across platforms.
+
+For redirects coming from user-supplied input (redirectTo), implement a `safeRedirect(to, default)` helper that returns only internal paths to avoid open-redirect vulnerabilities. Sanitize `redirectTo` in login actions/loaders and prefer POST for destructive actions like logout.

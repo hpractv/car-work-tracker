@@ -255,4 +255,24 @@ Notable findings:
 - Dark mode uses CSS custom properties with @media (prefers-color-scheme: dark) — no JavaScript required
 - VIN field auto-uppercases input; validated for alphanumeric ≤17 chars
 - Car archive hides cars from all lists and maintenance calculations without deleting data
-- OdometerLog shows mileage progression bar chart for trend visualization
+- OdometerLog shows mileage progression bar chart for trend visualization---
+[2026-03-17] Loop 10
+
+Tasks Attempted:
+- Re-run typecheck + build after recent edits
+- Apply CSV export, auth, maintenance forecasting, PWA manifest, accessibility fixes
+- Rename server-only export routes to .ts to avoid client bundling
+
+Tasks Completed:
+- CSV export escaping fixed ✅
+- Added safeRedirect and sanitized redirectTo ✅
+- Logout made POST-only ✅
+- getMaintenanceForecast respects car overrides ✅
+- Replaced inline months calc with monthsDiff ✅
+- Fixed manifest icons sizes ✅
+- Renamed server-only export routes to .ts ✅
+- Accessibility improvements applied to components ✅
+
+Build result: npm run build ✅ exit code 0
+
+---

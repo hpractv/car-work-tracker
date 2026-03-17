@@ -41,10 +41,18 @@ export async function requireUserId(request: Request): Promise<string> {
   return userId;
 }
 
+export function safeRedirect(to: unknown, defaultRedirect = "/") {
+  if (typeof to !== "string") return defaultRedirect;
+  // only allow same-origin paths that start with a single "/"
+  if (!to.startsWith("/") || to.startsWith("//")) return defaultRedirect;
+  return to;
+}
+
 export async function createUserSession(userId: string, redirectTo: string) {
   const session = await sessionStorage.getSession();
   session.set("userId", userId);
-  return redirect(redirectTo, {
+  const safe = safeRedirect(redirectTo, "/");
+  return redirect(safe, {
     headers: {
       "Set-Cookie": await sessionStorage.commitSession(session),
     },

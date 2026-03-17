@@ -34,6 +34,9 @@ model Car {
   members         CarMember[]
   maintenanceRecords MaintenanceRecord[]
   odometerLogs    OdometerLog[]
+  maintenanceOverrides CarMaintenanceOverride[]
+  fuelLogs        FuelLog[]
+  documents       CarDocument[]
 }
 
 model CarMember {
@@ -74,4 +77,40 @@ model OdometerLog {
   note       String?
   recordedAt DateTime @default(now())
   car        Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+}
+
+model CarMaintenanceOverride {
+  id             String @id @default(cuid())
+  carId          String
+  typeName       String
+  intervalMiles  Int?
+  intervalMonths Int?
+  car            Car    @relation(fields: [carId], references: [id], onDelete: Cascade)
+  @@unique([carId, typeName])
+}
+
+model FuelLog {
+  id             String   @id @default(cuid())
+  carId          String
+  date           DateTime
+  mileage        Int
+  gallons        Float
+  pricePerGallon Float?
+  totalCost      Float?
+  fullTank       Boolean  @default(true)
+  notes          String?
+  createdAt      DateTime @default(now())
+  car            Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+}
+
+model CarDocument {
+  id         String    @id @default(cuid())
+  carId      String
+  type       String
+  title      String
+  expiryDate DateTime?
+  fileUrl    String?
+  notes      String?
+  createdAt  DateTime  @default(now())
+  car        Car       @relation(fields: [carId], references: [id], onDelete: Cascade)
 }

@@ -12,7 +12,7 @@ import {
   updateMaintenanceRecord,
   getMaintenanceTypes,
 } from "~/models/maintenance.server";
-import { formatMaintenanceType } from "~/utils/format";
+import { formatMaintenanceType, getMaintenanceCategory } from "~/utils/format";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

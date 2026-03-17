@@ -195,3 +195,168 @@ export async function deleteOdometerLog(logId: string, carId: string, userId: st
   if (!membership) throw new Error("Not authorized");
   return db.odometerLog.deleteMany({ where: { id: logId, carId } });
 }
+
+export async function getCarDocuments(carId: string) {
+  return db.carDocument.findMany({
+    where: { carId },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function addCarDocument(
+  carId: string,
+  data: {
+    type: string;
+    title: string;
+    expiryDate?: Date | null;
+    fileUrl?: string | null;
+    notes?: string | null;
+  },
+  userId: string
+) {
+  const membership = await db.carMember.findFirst({ where: { carId, userId } });
+  if (!membership) throw new Error('Not authorized');
+  return db.carDocument.create({ data: { carId, ...data } });
+}
+
+export async function deleteCarDocument(docId: string, carId: string, userId: string) {
+  const membership = await db.carMember.findFirst({ where: { carId, userId } });
+  if (!membership) throw new Error('Not authorized');
+  return db.carDocument.deleteMany({ where: { id: docId, carId } });
+}
+
+export async function updateCarDocument(
+  docId: string,
+  carId: string,
+  data: {
+    type: string;
+    title: string;
+    expiryDate?: Date | null;
+    fileUrl?: string | null;
+    notes?: string | null;
+  },
+  userId: string
+) {
+  const membership = await db.carMember.findFirst({ where: { carId, userId } });
+  if (!membership) throw new Error('Not authorized');
+  return db.carDocument.update({
+    where: { id: docId },
+    data: { ...data },
+  });
+}
+
+export async function getExpiringDocuments(userCarIds: string[], daysAhead = 30) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() + daysAhead);
+  return db.carDocument.findMany({
+    where: {
+      carId: { in: userCarIds },
+      expiryDate: { lte: cutoff, gte: new Date() },
+    },
+    include: { car: { select: { make: true, model: true, year: true, id: true } } },
+    orderBy: { expiryDate: 'asc' },
+  });
+}
+
+export async function getExpiredDocuments(userCarIds: string[]) {
+  return db.carDocument.findMany({
+    where: {
+      carId: { in: userCarIds },
+      expiryDate: { lt: new Date() },
+    },
+    include: { car: { select: { make: true, model: true, year: true, id: true } } },
+    orderBy: { expiryDate: 'desc' },
+  });
+}
+
+export async function getCarMaintenanceOverrides(carId: string) {
+  return db.carMaintenanceOverride.findMany({ where: { carId }, orderBy: { typeName: 'asc' } });
+}
+
+export async function upsertCarMaintenanceOverride(
+  carId: string,
+  typeName: string,
+  intervalMiles: number | null,
+  intervalMonths: number | null,
+  userId: string
+) {
+  const membership = await db.carMember.findFirst({ where: { carId, userId } });
+  if (!membership) throw new Error('Not authorized');
+  return db.carMaintenanceOverride.upsert({
+    where: { carId_typeName: { carId, typeName } },
+    create: { carId, typeName, intervalMiles, intervalMonths },
+    update: { intervalMiles, intervalMonths },
+  });
+}
+
+export async function deleteCarMaintenanceOverride(carId: string, typeName: string, userId: string) {
+  const membership = await db.carMember.findFirst({ where: { carId, userId } });
+  if (!membership) throw new Error('Not authorized');
+  return db.carMaintenanceOverride.deleteMany({ where: { carId, typeName } });
+}
+
+export async function getFuelLogs(carId: string) {
+  return db.fuelLog.findMany({
+    where: { carId },
+    orderBy: { date: 'desc' },
+  });
+}
+
+export async function addFuelLog(
+  carId: string,
+  data: {
+    date: Date;
+    mileage: number;
+    gallons: number;
+    pricePerGallon?: number | null;
+    totalCost?: number | null;
+    fullTank: boolean;
+    notes?: string | null;
+  },
+  userId: string
+) {
+  if (data.mileage < 0) throw new Error('Mileage cannot be negative');
+  if (data.gallons <= 0) throw new Error('Gallons must be positive');
+  const membership = await db.carMember.findFirst({ where: { carId, userId } });
+  if (!membership) throw new Error('Not authorized');
+  return db.fuelLog.create({ data: { carId, ...data } });
+}
+
+export async function deleteFuelLog(logId: string, carId: string, userId: string) {
+  const membership = await db.carMember.findFirst({ where: { carId, userId } });
+  if (!membership) throw new Error('Not authorized');
+  return db.fuelLog.deleteMany({ where: { id: logId, carId } });
+}
+
+export async function updateFuelLog(
+  logId: string,
+  carId: string,
+  data: {
+    date: Date;
+    mileage: number;
+    gallons: number;
+    pricePerGallon: number | null;
+    totalCost: number | null;
+    fullTank: boolean;
+    notes: string | null;
+  },
+  userId: string
+) {
+  const membership = await db.carMember.findFirst({
+    where: { carId, userId },
+  });
+  if (!membership) throw new Error("Not authorized");
+
+  return db.fuelLog.update({
+    where: { id: logId },
+    data: {
+      date: data.date,
+      mileage: data.mileage,
+      gallons: data.gallons,
+      pricePerGallon: data.pricePerGallon,
+      totalCost: data.totalCost,
+      fullTank: data.fullTank,
+      notes: data.notes,
+    },
+  });
+}

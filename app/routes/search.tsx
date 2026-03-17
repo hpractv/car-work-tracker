@@ -1,5 +1,5 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, Form, isRouteErrorResponse, useRouteError } from "@remix-run/react";
+import { useLoaderData, Form, Link, isRouteErrorResponse, useRouteError } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { db } from "~/db.server";
 import { formatMaintenanceType, formatDate, formatCurrency } from "~/utils/format";
@@ -14,7 +14,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const q = (url.searchParams.get("q") ?? "").trim();
 
   if (q.length < 2) {
-    return json({ cars: [], records: [], query: q, totalCars: 0, totalRecords: 0 });
+    return json({ cars: [], records: [], documentResults: [], fuelLogResults: [], query: q, totalCars: 0, totalRecords: 0 });
   }
 
   const memberRows = await db.carMember.findMany({
@@ -32,6 +32,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
           { model: { contains: q } },
           { vendor: { contains: q } },
           { description: { contains: q } },
+          { vin: { contains: q } },
+          { color: { contains: q } },
+          { notes: { contains: q } },
         ],
       },
     ],
@@ -73,12 +76,39 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ? await db.maintenanceRecord.count({ where: recordWhere })
     : 0;
 
-  return json({ cars, records, query: q, totalCars, totalRecords });
+  // Documents search
+  const documentResults = q.length >= 2
+    ? await db.carDocument.findMany({
+        where: {
+          carId: { in: carIds },
+          OR: [
+            { title: { contains: q } },
+            { notes: { contains: q } },
+          ],
+        },
+        include: { car: { select: { id: true, make: true, model: true, year: true } } },
+        take: 10,
+      })
+    : [];
+
+  // Fuel log search
+  const fuelLogResults = q.length >= 2
+    ? await db.fuelLog.findMany({
+        where: {
+          carId: { in: carIds },
+          notes: { contains: q },
+        },
+        include: { car: { select: { id: true, make: true, model: true, year: true } } },
+        take: 10,
+      })
+    : [];
+
+  return json({ cars, records, documentResults, fuelLogResults, query: q, totalCars, totalRecords });
 }
 
 export default function SearchPage() {
-  const { cars, records, query, totalCars, totalRecords } = useLoaderData<typeof loader>();
-  const hasResults = cars.length > 0 || records.length > 0;
+  const { cars, records, documentResults, fuelLogResults, query, totalCars, totalRecords } = useLoaderData<typeof loader>();
+  const hasResults = cars.length > 0 || records.length > 0 || documentResults.length > 0 || fuelLogResults.length > 0;
 
   return (
     <div className="container" style={{ padding: "1.5rem" }}>
@@ -147,6 +177,16 @@ export default function SearchPage() {
                         from {car.vendor}
                       </span>
                     )}
+                    {car.vin && (
+                      <span className="text-muted text-sm" style={{ marginLeft: "0.5rem" }}>
+                        VIN: <span style={{ fontFamily: "monospace" }}>{car.vin}</span>
+                      </span>
+                    )}
+                    {car.color && (
+                      <span className="text-muted text-sm" style={{ marginLeft: "0.5rem" }}>
+                        • {car.color}
+                      </span>
+                    )}
                     {car.currentMileage != null && (
                       <span className="text-muted text-sm" style={{ marginLeft: "0.5rem" }}>
                         {car.currentMileage.toLocaleString()} miles
@@ -193,6 +233,35 @@ export default function SearchPage() {
                   </a>
                 </div>
               ))}
+            </div>
+          )}
+
+          {documentResults.length > 0 && (
+            <div className="card">
+              <h2>Documents ({documentResults.length})</h2>
+              <ul>
+                {documentResults.map(doc => (
+                  <li key={doc.id}>
+                    <Link to={`/cars/${doc.car.id}/documents`} className="btn btn-secondary btn-sm" style={{marginRight:'0.5rem'}}>View</Link>
+                    <strong>{doc.title}</strong> ({doc.type}) — {doc.car.year} {doc.car.make} {doc.car.model}
+                    {doc.expiryDate && <span className="text-muted text-sm" style={{marginLeft:'0.5rem'}}>Expires: {formatDate(doc.expiryDate)}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {fuelLogResults.length > 0 && (
+            <div className="card">
+              <h2>Fuel Logs ({fuelLogResults.length})</h2>
+              <ul>
+                {fuelLogResults.map(log => (
+                  <li key={log.id}>
+                    <Link to={`/cars/${log.car.id}/fuel`} className="btn btn-secondary btn-sm" style={{marginRight:'0.5rem'}}>View</Link>
+                    {log.car.year} {log.car.make} {log.car.model} — {formatDate(log.date)} — {log.gallons.toFixed(1)} gal
+                    {log.notes && <span className="text-muted text-sm" style={{marginLeft:'0.5rem'}}>{log.notes}</span>}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>

@@ -8,7 +8,7 @@ import { Form, useActionData, useLoaderData, useNavigation, useRouteError, isRou
 import { requireUserId } from "~/session.server";
 import { getCarById } from "~/models/car.server";
 import { createMaintenanceRecord, getMaintenanceTypes } from "~/models/maintenance.server";
-import { formatMaintenanceType } from "~/utils/format";
+import { formatMaintenanceType, getMaintenanceCategory } from "~/utils/format";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

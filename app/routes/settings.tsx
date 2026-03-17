@@ -1,5 +1,6 @@
 import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useActionData, useNavigation, Link, Form } from "@remix-run/react";
+import React from "react";
 import { useState } from "react";
 import { Prisma } from "@prisma/client";
 import { requireUserId } from "~/session.server";
@@ -9,7 +10,7 @@ import {
   updateMaintenanceType,
   deleteMaintenanceType,
 } from "~/models/maintenance.server";
-import { formatMaintenanceType } from "~/utils/format";
+import { formatMaintenanceType, getMaintenanceCategory } from "~/utils/format";
 import { db } from "~/db.server";
 
 export function meta() {
@@ -49,8 +50,14 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!name) return json({ error: "Name must contain letters or numbers" }, { status: 400 });
     const milesRaw = formData.get("miles") as string | null;
     const monthsRaw = formData.get("months") as string | null;
-    const defaultIntervalMiles = milesRaw ? parseInt(milesRaw, 10) || null : null;
-    const defaultIntervalMonths = monthsRaw ? parseInt(monthsRaw, 10) || null : null;
+    const defaultIntervalMiles = milesRaw && milesRaw.trim() ? parseInt(milesRaw, 10) || null : null;
+    const defaultIntervalMonths = monthsRaw && monthsRaw.trim() ? parseInt(monthsRaw, 10) || null : null;
+    if (defaultIntervalMiles !== null && defaultIntervalMiles < 1) {
+      return json({ error: "Miles interval must be at least 1" }, { status: 400 });
+    }
+    if (defaultIntervalMonths !== null && defaultIntervalMonths < 1) {
+      return json({ error: "Months interval must be at least 1" }, { status: 400 });
+    }
     try {
       await createMaintenanceType({ name, defaultIntervalMiles, defaultIntervalMonths });
     } catch (e) {
@@ -71,8 +78,14 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!name) return json({ error: "Name must contain letters or numbers" }, { status: 400 });
     const milesRaw = formData.get("miles") as string | null;
     const monthsRaw = formData.get("months") as string | null;
-    const defaultIntervalMiles = milesRaw ? parseInt(milesRaw, 10) || null : null;
-    const defaultIntervalMonths = monthsRaw ? parseInt(monthsRaw, 10) || null : null;
+    const defaultIntervalMiles = milesRaw && milesRaw.trim() ? parseInt(milesRaw, 10) || null : null;
+    const defaultIntervalMonths = monthsRaw && monthsRaw.trim() ? parseInt(monthsRaw, 10) || null : null;
+    if (defaultIntervalMiles !== null && defaultIntervalMiles < 1) {
+      return json({ error: "Miles interval must be at least 1" }, { status: 400 });
+    }
+    if (defaultIntervalMonths !== null && defaultIntervalMonths < 1) {
+      return json({ error: "Months interval must be at least 1" }, { status: 400 });
+    }
     await updateMaintenanceType(id, { name, defaultIntervalMiles, defaultIntervalMonths });
     return redirect("/settings");
   }
@@ -133,83 +146,105 @@ export default function Settings() {
             </tr>
           </thead>
           <tbody>
-            {types.map((t) =>
-              editingId === t.id ? (
-                <tr key={t.id}>
-                  <td colSpan={4}>
-                    <Form method="post" style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-                      <input type="hidden" name="intent" value="update" />
-                      <input type="hidden" name="id" value={t.id} />
-                      <input
-                        className="form-control"
-                        name="name"
-                        defaultValue={t.name}
-                        placeholder="Service name"
-                        required
-                        style={{ flex: "1 1 160px" }}
-                      />
-                      <input
-                        className="form-control"
-                        name="miles"
-                        type="number"
-                        defaultValue={t.defaultIntervalMiles ?? ""}
-                        placeholder="Miles"
-                        style={{ flex: "0 1 100px" }}
-                      />
-                      <input
-                        className="form-control"
-                        name="months"
-                        type="number"
-                        defaultValue={t.defaultIntervalMonths ?? ""}
-                        placeholder="Months"
-                        style={{ flex: "0 1 100px" }}
-                      />
-                      <button type="submit" className="btn btn-primary btn-sm" disabled={isSubmitting}>
-                        Save
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => setEditingId(null)}
-                      >
-                        Cancel
-                      </button>
-                    </Form>
-                  </td>
-                </tr>
-              ) : (
-                <tr key={t.id}>
-                  <td><strong>{formatMaintenanceType(t.name)}</strong></td>
-                  <td>{t.defaultIntervalMiles != null ? t.defaultIntervalMiles.toLocaleString() : "—"}</td>
-                  <td>{t.defaultIntervalMonths != null ? `${t.defaultIntervalMonths}` : "—"}</td>
-                  <td style={{ whiteSpace: "nowrap" }}>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => setEditingId(t.id)}
-                      style={{ marginRight: "0.4rem" }}
-                    >
-                      Edit
-                    </button>
-                    <Form
-                      method="post"
-                      style={{ display: "inline" }}
-                      onSubmit={(e) => {
-                        if (!window.confirm(`Delete "${formatMaintenanceType(t.name)}"?`)) {
-                          e.preventDefault();
-                        }
-                      }}
-                    >
-                      <input type="hidden" name="intent" value="delete" />
-                      <input type="hidden" name="id" value={t.id} />
-                      <button type="submit" className="btn btn-danger btn-sm" disabled={isSubmitting}>
-                        Delete
-                      </button>
-                    </Form>
-                  </td>
-                </tr>
-              )
-            )}
+            {(() => {
+              const grouped = types.reduce((acc, mt) => {
+                const cat = getMaintenanceCategory(mt.name);
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(mt);
+                return acc;
+              }, {} as Record<string, typeof types>);
+              const allCats = Object.keys(grouped).sort();
+              const sortedCategories = [
+                ...allCats.filter((c) => c !== "Other"),
+                ...allCats.filter((c) => c === "Other"),
+              ];
+              return sortedCategories.map((cat) => (
+                <React.Fragment key={cat}>
+                  <tr>
+                    <td colSpan={4} style={{ background: "#f8fafc", padding: "0.35rem 0.75rem", fontSize: "0.8rem", fontWeight: 700, color: "#64748b", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                      {cat}
+                    </td>
+                  </tr>
+                  {grouped[cat].map((t) =>
+                    editingId === t.id ? (
+                      <tr key={t.id}>
+                        <td colSpan={4}>
+                          <Form method="post" style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                            <input type="hidden" name="intent" value="update" />
+                            <input type="hidden" name="id" value={t.id} />
+                            <input
+                              className="form-control"
+                              name="name"
+                              defaultValue={t.name}
+                              placeholder="Service name"
+                              required
+                              style={{ flex: "1 1 160px" }}
+                            />
+                            <input
+                              className="form-control"
+                              name="miles"
+                              type="number"
+                              defaultValue={t.defaultIntervalMiles ?? ""}
+                              placeholder="Miles"
+                              style={{ flex: "0 1 100px" }}
+                            />
+                            <input
+                              className="form-control"
+                              name="months"
+                              type="number"
+                              defaultValue={t.defaultIntervalMonths ?? ""}
+                              placeholder="Months"
+                              style={{ flex: "0 1 100px" }}
+                            />
+                            <button type="submit" className="btn btn-primary btn-sm" disabled={isSubmitting}>
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => setEditingId(null)}
+                            >
+                              Cancel
+                            </button>
+                          </Form>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={t.id}>
+                        <td><strong>{formatMaintenanceType(t.name)}</strong></td>
+                        <td>{t.defaultIntervalMiles != null ? t.defaultIntervalMiles.toLocaleString() : "—"}</td>
+                        <td>{t.defaultIntervalMonths != null ? `${t.defaultIntervalMonths}` : "—"}</td>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setEditingId(t.id)}
+                            style={{ marginRight: "0.4rem" }}
+                          >
+                            Edit
+                          </button>
+                          <Form
+                            method="post"
+                            style={{ display: "inline" }}
+                            onSubmit={(e) => {
+                              if (!window.confirm(`Delete "${formatMaintenanceType(t.name)}"?`)) {
+                                e.preventDefault();
+                              }
+                            }}
+                          >
+                            <input type="hidden" name="intent" value="delete" />
+                            <input type="hidden" name="id" value={t.id} />
+                            <button type="submit" className="btn btn-danger btn-sm" disabled={isSubmitting}>
+                              Delete
+                            </button>
+                          </Form>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </React.Fragment>
+              ));
+            })()}
           </tbody>
         </table>
       </div>

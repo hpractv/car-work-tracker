@@ -30,22 +30,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // ── Year-over-year ──────────────────────────────────────────────────────
   const byYearMap = new Map<
     number,
-    { year: number; totalCost: number; count: number; byType: Record<string, number> }
+    { year: number; totalCost: number; count: number; byType: Record<string, number>; minMileage: number | null; maxMileage: number | null }
   >();
 
   for (const rec of records) {
     const year = new Date(rec.date).getFullYear();
     const cost = rec.cost ?? 0;
     if (!byYearMap.has(year)) {
-      byYearMap.set(year, { year, totalCost: 0, count: 0, byType: {} });
+      byYearMap.set(year, { year, totalCost: 0, count: 0, byType: {}, minMileage: null, maxMileage: null });
     }
     const entry = byYearMap.get(year)!;
     entry.totalCost += cost;
     entry.count += 1;
     entry.byType[rec.type] = (entry.byType[rec.type] ?? 0) + cost;
+    if (entry.minMileage === null || rec.mileage < entry.minMileage) entry.minMileage = rec.mileage;
+    if (entry.maxMileage === null || rec.mileage > entry.maxMileage) entry.maxMileage = rec.mileage;
   }
 
-  const yearOverYear = Array.from(byYearMap.values()).sort((a, b) => b.year - a.year);
+  const yearOverYear = Array.from(byYearMap.values()).map((y) => ({
+    ...y,
+    costPerMile:
+      y.minMileage !== null && y.maxMileage !== null && y.maxMileage - y.minMileage > 100
+        ? y.totalCost / (y.maxMileage - y.minMileage)
+        : null,
+  })).sort((a, b) => b.year - a.year);
 
   // ── Cost by car ─────────────────────────────────────────────────────────
   const byCarMap = new Map<
@@ -91,7 +99,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const byCar = Array.from(byCarMap.values()).map((entry) => ({
     ...entry,
     costPerMile:
-      entry.minMileage !== null && entry.maxMileage !== null && entry.maxMileage > entry.minMileage
+      entry.minMileage !== null && entry.maxMileage !== null && entry.maxMileage - entry.minMileage > 100
         ? entry.totalCost / (entry.maxMileage - entry.minMileage)
         : null,
   })).sort((a, b) => b.totalCost - a.totalCost);
@@ -178,6 +186,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       type: r.type,
       date: r.date,
       cost: r.cost!,
+      mileage: r.mileage,
       vendor: r.vendor,
     }));
 
@@ -190,6 +199,76 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const avgCostPerService = records.length > 0 ? totalFleetCost / records.length : 0;
   const mostServicedCar = byCar.length > 0 ? byCar.reduce((a, b) => (b.count > a.count ? b : a)) : null;
 
+  const allMileages = records.map((r) => r.mileage);
+  const fleetMinMileage = allMileages.length > 0 ? Math.min(...allMileages) : null;
+  const fleetMaxMileage = allMileages.length > 0 ? Math.max(...allMileages) : null;
+  const fleetMileageSpan =
+    fleetMinMileage !== null && fleetMaxMileage !== null ? fleetMaxMileage - fleetMinMileage : null;
+  const fleetCostPerMile =
+    fleetMileageSpan && fleetMileageSpan > 100 && totalFleetCost > 0
+      ? totalFleetCost / fleetMileageSpan
+      : null;
+
+  const fuelLogs = carIds.length
+    ? await db.fuelLog.findMany({
+        where: { carId: { in: carIds } },
+        include: { car: { select: { id: true, make: true, model: true, year: true } } },
+        orderBy: { date: 'desc' },
+      })
+    : [];
+
+  const fuelByCar = new Map<string, { label: string; totalCost: number; totalGallons: number; mpgValues: number[] }>();
+  for (const car of cars) {
+    fuelByCar.set(car.id, { label: `${car.year} ${car.make} ${car.model}`, totalCost: 0, totalGallons: 0, mpgValues: [] });
+  }
+  for (const log of fuelLogs) {
+    const entry = fuelByCar.get(log.carId);
+    if (!entry) continue;
+    entry.totalCost += log.totalCost ?? 0;
+    entry.totalGallons += log.gallons;
+  }
+  for (const car of cars) {
+    const carLogs = fuelLogs.filter(l => l.carId === car.id && l.fullTank)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    for (let i = 1; i < carLogs.length; i++) {
+      const diff = carLogs[i].mileage - carLogs[i-1].mileage;
+      if (diff > 0 && carLogs[i].gallons > 0) {
+        fuelByCar.get(car.id)!.mpgValues.push(diff / carLogs[i].gallons);
+      }
+    }
+  }
+  const fuelByCarArr = Array.from(fuelByCar.values())
+    .filter(c => c.totalCost > 0 || c.totalGallons > 0)
+    .map(c => ({
+      label: c.label,
+      totalCost: c.totalCost,
+      totalGallons: c.totalGallons,
+      avgMpg: c.mpgValues.length > 0 ? c.mpgValues.reduce((s,v)=>s+v,0)/c.mpgValues.length : null,
+    }))
+    .sort((a, b) => b.totalCost - a.totalCost);
+  const totalFuelCost = fuelLogs.reduce((s, l) => s + (l.totalCost ?? 0), 0);
+  const totalGallons = fuelLogs.reduce((s, l) => s + l.gallons, 0);
+
+  const fleetMpgValues = fuelByCarArr.map((c) => c.avgMpg).filter((v): v is number => v !== null);
+  const fleetAvgMpg = fleetMpgValues.length > 0 ? fleetMpgValues.reduce((s, v) => s + v, 0) / fleetMpgValues.length : null;
+
+  // ── Monthly fuel cost (last 12 months) ───────────────────────────────────
+  const monthlyFuelMap = new Map<string, { key: string; label: string; total: number }>();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+    monthlyFuelMap.set(key, { key, label, total: 0 });
+  }
+  for (const log of fuelLogs) {
+    const d = new Date(log.date);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (monthlyFuelMap.has(key)) {
+      monthlyFuelMap.get(key)!.total += log.totalCost ?? 0;
+    }
+  }
+  const monthlyFuelCost = Array.from(monthlyFuelMap.values());
+
   return json({
     cars,
     totalRecords: records.length,
@@ -197,6 +276,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     thisYearCost,
     avgCostPerService,
     mostServicedCar,
+    fleetCostPerMile,
     yearOverYear,
     byCar,
     byType,
@@ -204,6 +284,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     currentYear,
     byTypeFrequencyArr,
     topExpensiveRecords,
+    fuelByCarArr,
+    totalFuelCost,
+    totalGallons,
+    fleetAvgMpg,
+    monthlyFuelCost,
   });
 }
 
@@ -219,6 +304,7 @@ export default function ReportsIndex() {
     thisYearCost,
     avgCostPerService,
     mostServicedCar,
+    fleetCostPerMile,
     yearOverYear,
     byCar,
     byType,
@@ -226,6 +312,8 @@ export default function ReportsIndex() {
     currentYear,
     byTypeFrequencyArr,
     topExpensiveRecords,
+    fuelByCarArr,
+    totalFuelCost,
   } = useLoaderData<typeof loader>();
 
   // Empty state
@@ -315,6 +403,14 @@ export default function ReportsIndex() {
           sub={mostServicedCar ? `${mostServicedCar.count} services` : "no records yet"}
           small={!!mostServicedCar}
         />
+        {fleetCostPerMile != null && (
+          <SummaryCard
+            icon="📍"
+            label="Fleet Avg Cost/Mile"
+            value={`$${fleetCostPerMile.toFixed(3)}/mi`}
+            sub="maintenance cost per mile driven"
+          />
+        )}
       </div>
 
       {/* ── Year-over-Year ── */}
@@ -374,6 +470,7 @@ export default function ReportsIndex() {
                 <Th align="right">Records</Th>
                 <Th align="right">Total Cost</Th>
                 <Th align="right">Avg / Service</Th>
+                <Th align="right">Cost/Mile</Th>
                 <Th align="right">% of Peak</Th>
               </tr>
             </thead>
@@ -417,6 +514,15 @@ export default function ReportsIndex() {
                       </div>
                     </Td>
                     <Td align="right">{formatCurrency(avg)}</Td>
+                    <Td align="right">
+                      {y.costPerMile != null ? (
+                        <span style={{ color: cpmColor(y.costPerMile), fontWeight: 600 }}>
+                          ${y.costPerMile.toFixed(3)}/mi
+                        </span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </Td>
                     <Td align="right">
                       <span style={{ color: pct === 100 ? "#1e40af" : "#64748b" }}>
                         {pct.toFixed(1)}%
@@ -463,7 +569,9 @@ export default function ReportsIndex() {
                     <Td align="right">{formatCurrency(avg)}</Td>
                     <Td align="right">
                       {c.costPerMile != null ? (
-                        <span>${c.costPerMile.toFixed(3)}/mi</span>
+                        <span style={{ color: cpmColor(c.costPerMile), fontWeight: 600 }}>
+                          ${c.costPerMile.toFixed(3)}/mi
+                        </span>
                       ) : (
                         <span className="text-muted">—</span>
                       )}
@@ -484,6 +592,33 @@ export default function ReportsIndex() {
           </table>
         </div>
       </section>
+
+      {fuelByCarArr.length > 0 && (
+        <div className="card">
+          <h2>⛽ Fuel Cost by Car</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Car</th>
+                <th style={{textAlign:'right'}}>Gallons</th>
+                <th style={{textAlign:'right'}}>Total Cost</th>
+                <th style={{textAlign:'right'}}>Avg MPG</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fuelByCarArr.map(row => (
+                <tr key={row.label}>
+                  <td>{row.label}</td>
+                  <td style={{textAlign:'right'}}>{row.totalGallons.toFixed(1)}</td>
+                  <td style={{textAlign:'right'}}>{formatCurrency(row.totalCost)}</td>
+                  <td style={{textAlign:'right'}}>{row.avgMpg ? row.avgMpg.toFixed(1) + ' mpg' : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {totalFuelCost > 0 && <p className="text-sm text-muted mt-1">Total fuel spend: {formatCurrency(totalFuelCost)}</p>}
+        </div>
+      )}
 
       {/* ── Cost by Maintenance Type ── */}
       <section className="card mb-2" style={{ padding: "1.5rem" }}>
@@ -719,6 +854,7 @@ export default function ReportsIndex() {
                   <Th>Car</Th>
                   <Th>Type</Th>
                   <Th>Vendor</Th>
+                  <Th align="right">Mileage</Th>
                   <Th align="right">Cost</Th>
                 </tr>
               </thead>
@@ -748,6 +884,9 @@ export default function ReportsIndex() {
                     </Td>
                     <Td>{rec.vendor ?? <span className="text-muted">—</span>}</Td>
                     <Td align="right">
+                      <span className="text-muted">{rec.mileage.toLocaleString()} mi</span>
+                    </Td>
+                    <Td align="right">
                       <strong>{formatCurrency(rec.cost)}</strong>
                     </Td>
                   </tr>
@@ -764,6 +903,12 @@ export default function ReportsIndex() {
 // ---------------------------------------------------------------------------
 // Small reusable helpers
 // ---------------------------------------------------------------------------
+
+function cpmColor(cpm: number): string {
+  if (cpm < 0.10) return "#16a34a";
+  if (cpm <= 0.20) return "#ca8a04";
+  return "#dc2626";
+}
 
 function SummaryCard({
   icon,

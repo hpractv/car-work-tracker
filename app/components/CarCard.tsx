@@ -16,9 +16,11 @@ interface CarCardProps {
   dueTypes?: string[];
   lastServiceDate?: string | null;
   totalRecords?: number;
+  healthScore?: number | null;
+  docStatus?: { expired: number; expiring: number };
 }
 
-export default function CarCard({ car, imageUrl, dueCount, dueTypes, lastServiceDate, totalRecords }: CarCardProps) {
+export default function CarCard({ car, imageUrl, dueCount, dueTypes, lastServiceDate, totalRecords, healthScore, docStatus }: CarCardProps) {
   return (
     <div className="card" style={{ position: "relative" }}>
       {dueCount != null && dueCount > 0 && (
@@ -34,7 +36,8 @@ export default function CarCard({ car, imageUrl, dueCount, dueTypes, lastService
             fontSize: "0.75rem",
             fontWeight: 700,
           }}
-          title={`${dueCount} maintenance item(s) due`}
+          role="status"
+          aria-label={`${dueCount} maintenance item${dueCount !== 1 ? 's' : ''} due`}
         >
           {dueCount} due
         </span>
@@ -47,8 +50,32 @@ export default function CarCard({ car, imageUrl, dueCount, dueTypes, lastService
           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
         />
       )}
-      <h3>
+      <h3 style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
         {car.year} {car.make} {car.model}
+        {healthScore != null && (
+          <span
+            style={{
+              display: "inline-block",
+              padding: "0.15rem 0.45rem",
+              borderRadius: "999px",
+              fontSize: "0.7rem",
+              fontWeight: 700,
+              color: "white",
+              background:
+                healthScore >= 90
+                  ? "#16a34a"
+                  : healthScore >= 70
+                  ? "#65a30d"
+                  : healthScore >= 50
+                  ? "#d97706"
+                  : "#dc2626",
+            }}
+            aria-label={`Health score ${healthScore} percent`}
+            title={`Health score ${healthScore}%`}
+          >
+            {healthScore}%
+          </span>
+        )}
       </h3>
       <p className="text-muted text-sm">
         {car.currentMileage.toLocaleString()} miles
@@ -66,6 +93,13 @@ export default function CarCard({ car, imageUrl, dueCount, dueTypes, lastService
         <p className="text-sm" style={{ color: "#92400e", marginTop: "0.25rem" }}>
           ⚠️ Due: {dueTypes.slice(0, 3).map(t => formatMaintenanceType(t)).join(", ")}
           {dueTypes.length > 3 ? ` +${dueTypes.length - 3} more` : ""}
+        </p>
+      )}
+      {docStatus && (docStatus.expired > 0 || docStatus.expiring > 0) && (
+        <p className="text-sm" style={{ color: docStatus.expired > 0 ? "#dc2626" : "#d97706", marginTop: "0.25rem" }}>
+          {docStatus.expired > 0 && `📄 ${docStatus.expired} expired doc${docStatus.expired !== 1 ? 's' : ''}`}
+          {docStatus.expired > 0 && docStatus.expiring > 0 && " · "}
+          {docStatus.expiring > 0 && `📄 ${docStatus.expiring} expiring soon`}
         </p>
       )}
       <div className="mt-2">

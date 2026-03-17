@@ -34,6 +34,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (isNaN(mileage) || mileage < 0) {
       return json({ error: "Mileage must be a non-negative number" }, { status: 400 });
     }
+    // Fetch the most recent log to prevent backward mileage
+    const existingLogs = await getOdometerLogs(carId);
+    if (existingLogs.length > 0) {
+      const maxPreviousMileage = Math.max(...existingLogs.map(l => l.mileage));
+      if (mileage < maxPreviousMileage) {
+        return json({ error: `Mileage (${mileage.toLocaleString()}) cannot be less than a previous reading (${maxPreviousMileage.toLocaleString()} miles)` }, { status: 400 });
+      }
+    }
     try {
       await addOdometerLog(carId, mileage, note, userId);
       return redirect(`/cars/${carId}/odometer`);

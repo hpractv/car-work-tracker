@@ -94,21 +94,25 @@ export default function NearbyServicesAlert({
   const displayServices = services.slice(0, 5);
 
   return (
-    <div className="alert alert-warning" style={{ flexDirection: "column", gap: "0.5rem" }}>
+    <div className="alert alert-warning" style={{ flexDirection: "column", gap: "0.5rem" }} role="status" aria-live="polite" aria-atomic="true">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
         <span>
           ⚠️ <strong>Maintenance due</strong> ({dueTypes}) — {services.length} service station{services.length !== 1 ? "s" : ""} nearby.{" "}
-          Nearest: <strong><a href={mapsUrl(nearest.lat, nearest.lon, nearest.name)} target="_blank" rel="noopener noreferrer" style={{ color: "#92400e" }}>"{nearest.name}"</a></strong> ({(nearest.distance / 1000).toFixed(1)} km away)
+          Nearest: <strong>
+            <a href={mapsUrl(nearest.lat, nearest.lon, nearest.name)} target="_blank" rel="noopener noreferrer" style={{ color: "#92400e" }} aria-label={`Open ${nearest.name} in Google Maps`}>"{nearest.name}"</a>
+          </strong> ({(nearest.distance / 1000).toFixed(1)} km away)
         </span>
         <button
-          onClick={() => setShowList(!showList)}
+          onClick={() => setShowList(prev => !prev)}
+          aria-expanded={showList}
+          aria-controls="nearby-services-list"
           style={{ background: "none", border: "1px solid #f59e0b", borderRadius: "4px", padding: "0.2rem 0.5rem", cursor: "pointer", color: "#92400e", fontSize: "0.8rem", whiteSpace: "nowrap", marginLeft: "0.5rem" }}
         >
-          {showList ? "Hide ▲" : "Show nearby shops ▼"}
+          {showList ? "Hide nearby shops ▲" : "Show nearby shops ▼"}
         </button>
       </div>
       {showList && (
-        <ul style={{ margin: 0, padding: 0, listStyle: "none", width: "100%", borderTop: "1px solid #f59e0b", paddingTop: "0.5rem" }}>
+        <ul id="nearby-services-list" style={{ margin: 0, padding: 0, listStyle: "none", width: "100%", borderTop: "1px solid #f59e0b", paddingTop: "0.5rem" }} aria-hidden={!showList}>
           {displayServices.map((s, i) => (
             <li key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.2rem 0", fontSize: "0.85rem" }}>
               <span>{i + 1}. {s.name}</span>
@@ -120,6 +124,7 @@ export default function NearbyServicesAlert({
                   rel="noopener noreferrer"
                   className="btn btn-secondary btn-sm"
                   style={{ padding: "0.1rem 0.4rem", fontSize: "0.75rem" }}
+                  aria-label={`Open ${s.name} in Google Maps`}
                 >
                   📍 Map
                 </a>

@@ -96,7 +96,24 @@ function monthsDiff(from: Date, to: Date): number {
   return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
 }
 
-export async function getMaintenanceDue(carId: string, currentMileage: number) {
+type OverrideEntry = { typeName: string; intervalMiles: number | null; intervalMonths: number | null };
+
+function applyOverride(
+  mt: { defaultIntervalMiles: number | null; defaultIntervalMonths: number | null; name: string },
+  overrides: OverrideEntry[]
+) {
+  const override = overrides.find(o => o.typeName === mt.name);
+  return {
+    intervalMiles: override ? override.intervalMiles : mt.defaultIntervalMiles,
+    intervalMonths: override ? override.intervalMonths : mt.defaultIntervalMonths,
+  };
+}
+
+export async function getMaintenanceDue(
+  carId: string,
+  currentMileage: number,
+  overrides?: OverrideEntry[]
+) {
   const types = await db.maintenanceType.findMany();
   const records = await db.maintenanceRecord.findMany({
     where: { carId },
@@ -113,18 +130,19 @@ export async function getMaintenanceDue(carId: string, currentMileage: number) {
   for (const mt of types) {
     const lastRecord = records.find((r) => r.type === mt.name);
     const now = new Date();
+    const { intervalMiles, intervalMonths } = applyOverride(mt, overrides ?? []);
 
     if (!lastRecord) {
       continue;
     }
 
     // Check mileage interval
-    if (mt.defaultIntervalMiles && lastRecord) {
+    if (intervalMiles && lastRecord) {
       const milesSince = currentMileage - lastRecord.mileage;
-      if (milesSince >= mt.defaultIntervalMiles) {
+      if (milesSince >= intervalMiles) {
         due.push({
           type: mt.name,
-          reason: `${milesSince.toLocaleString()} miles since last service (interval: ${mt.defaultIntervalMiles.toLocaleString()} miles)`,
+          reason: `${milesSince.toLocaleString()} miles since last service (interval: ${intervalMiles.toLocaleString()} miles)`,
           lastDate: lastRecord.date,
           lastMileage: lastRecord.mileage,
         });
@@ -133,12 +151,12 @@ export async function getMaintenanceDue(carId: string, currentMileage: number) {
     }
 
     // Check time interval
-    if (mt.defaultIntervalMonths && lastRecord) {
+    if (intervalMonths && lastRecord) {
       const monthsSince = monthsDiff(lastRecord.date, now);
-      if (monthsSince >= mt.defaultIntervalMonths) {
+      if (monthsSince >= intervalMonths) {
         due.push({
           type: mt.name,
-          reason: `${Math.floor(monthsSince)} months since last service (interval: ${mt.defaultIntervalMonths} months)`,
+          reason: `${Math.floor(monthsSince)} months since last service (interval: ${intervalMonths} months)`,
           lastDate: lastRecord.date,
           lastMileage: lastRecord.mileage,
         });
@@ -160,12 +178,13 @@ export async function getBatchMaintenanceDue(
   if (cars.length === 0) return new Map();
 
   const carIds = cars.map((c) => c.id);
-  const [types, records] = await Promise.all([
+  const [types, records, allOverrides] = await Promise.all([
     db.maintenanceType.findMany(),
     db.maintenanceRecord.findMany({
       where: { carId: { in: carIds } },
       orderBy: { date: "desc" },
     }),
+    db.carMaintenanceOverride.findMany({ where: { carId: { in: carIds } } }),
   ]);
 
   // Group records by carId (already ordered desc, so first occurrence per type is most recent)
@@ -185,18 +204,21 @@ export async function getBatchMaintenanceDue(
 
   for (const car of cars) {
     const carRecords = recordsByCarId.get(car.id) ?? [];
+    const carOverrides = allOverrides.filter(o => o.carId === car.id);
     const due: Array<{ type: string; reason: string; lastDate?: Date; lastMileage?: number }> = [];
 
     for (const mt of types) {
       const lastRecord = carRecords.find((r) => r.type === mt.name);
       if (!lastRecord) continue;
 
-      if (mt.defaultIntervalMiles) {
+      const { intervalMiles, intervalMonths } = applyOverride(mt, carOverrides);
+
+      if (intervalMiles) {
         const milesSince = car.currentMileage - lastRecord.mileage;
-        if (milesSince >= mt.defaultIntervalMiles) {
+        if (milesSince >= intervalMiles) {
           due.push({
             type: mt.name,
-            reason: `${milesSince.toLocaleString()} miles since last service (interval: ${mt.defaultIntervalMiles.toLocaleString()} miles)`,
+            reason: `${milesSince.toLocaleString()} miles since last service (interval: ${intervalMiles.toLocaleString()} miles)`,
             lastDate: lastRecord.date,
             lastMileage: lastRecord.mileage,
           });
@@ -204,12 +226,12 @@ export async function getBatchMaintenanceDue(
         }
       }
 
-      if (mt.defaultIntervalMonths) {
+      if (intervalMonths) {
         const monthsSince = monthsDiff(lastRecord.date, now);
-        if (monthsSince >= mt.defaultIntervalMonths) {
+        if (monthsSince >= intervalMonths) {
           due.push({
             type: mt.name,
-            reason: `${monthsSince} months since last service (interval: ${mt.defaultIntervalMonths} months)`,
+            reason: `${monthsSince} months since last service (interval: ${intervalMonths} months)`,
             lastDate: lastRecord.date,
             lastMileage: lastRecord.mileage,
           });
@@ -246,12 +268,13 @@ export async function getBatchMaintenanceApproaching(
   if (cars.length === 0) return new Map();
 
   const carIds = cars.map((c) => c.id);
-  const [types, records] = await Promise.all([
+  const [types, records, allOverrides] = await Promise.all([
     db.maintenanceType.findMany(),
     db.maintenanceRecord.findMany({
       where: { carId: { in: carIds } },
       orderBy: { date: "desc" },
     }),
+    db.carMaintenanceOverride.findMany({ where: { carId: { in: carIds } } }),
   ]);
 
   const recordsByCarId = new Map<string, typeof records>();
@@ -277,6 +300,7 @@ export async function getBatchMaintenanceApproaching(
 
   for (const car of cars) {
     const carRecords = recordsByCarId.get(car.id) ?? [];
+    const carOverrides = allOverrides.filter(o => o.carId === car.id);
     const approaching: Array<{
       type: string;
       overallPercent: number;
@@ -290,6 +314,7 @@ export async function getBatchMaintenanceApproaching(
       const lastRecord = carRecords.find((r) => r.type === mt.name);
       if (!lastRecord) continue;
 
+      const { intervalMiles, intervalMonths } = applyOverride(mt, carOverrides);
       const milesSinceLast = car.currentMileage - lastRecord.mileage;
       const monthsSinceLast = monthsDiff(lastRecord.date, now);
 
@@ -298,20 +323,20 @@ export async function getBatchMaintenanceApproaching(
       let nextMileage: number | null = null;
       let nextDate: Date | null = null;
 
-      if (mt.defaultIntervalMiles) {
+      if (intervalMiles) {
         mileagePercent = Math.min(
           100,
-          Math.round((milesSinceLast / mt.defaultIntervalMiles) * 100)
+          Math.round((milesSinceLast / intervalMiles) * 100)
         );
-        nextMileage = lastRecord.mileage + mt.defaultIntervalMiles;
+        nextMileage = lastRecord.mileage + intervalMiles;
       }
-      if (mt.defaultIntervalMonths) {
+      if (intervalMonths) {
         timePercent = Math.min(
           100,
-          Math.round((monthsSinceLast / mt.defaultIntervalMonths) * 100)
+          Math.round((monthsSinceLast / intervalMonths) * 100)
         );
         const nextDueDate = new Date(lastRecord.date);
-        nextDueDate.setMonth(nextDueDate.getMonth() + mt.defaultIntervalMonths);
+        nextDueDate.setMonth(nextDueDate.getMonth() + intervalMonths);
         nextDate = nextDueDate;
       }
 
@@ -353,7 +378,11 @@ export async function getMaintenanceApproaching(
     }));
 }
 
-export async function getServiceIntervalStatus(carId: string, currentMileage: number) {
+export async function getServiceIntervalStatus(
+  carId: string,
+  currentMileage: number,
+  overrides?: OverrideEntry[]
+) {
   const types = await db.maintenanceType.findMany();
   const records = await db.maintenanceRecord.findMany({
     where: { carId },
@@ -363,6 +392,7 @@ export async function getServiceIntervalStatus(carId: string, currentMileage: nu
   return types.map((mt) => {
     const lastRecord = records.find((r) => r.type === mt.name);
     const now = new Date();
+    const { intervalMiles, intervalMonths } = applyOverride(mt, overrides ?? []);
     
     let milesSinceLast: number | null = null;
     let monthsSinceLast: number | null = null;
@@ -375,14 +405,14 @@ export async function getServiceIntervalStatus(carId: string, currentMileage: nu
       milesSinceLast = currentMileage - lastRecord.mileage;
       monthsSinceLast = monthsDiff(lastRecord.date, now);
       
-      if (mt.defaultIntervalMiles) {
-        mileagePercent = Math.min(100, Math.round((milesSinceLast / mt.defaultIntervalMiles) * 100));
-        nextMileage = lastRecord.mileage + mt.defaultIntervalMiles;
+      if (intervalMiles) {
+        mileagePercent = Math.min(100, Math.round((milesSinceLast / intervalMiles) * 100));
+        nextMileage = lastRecord.mileage + intervalMiles;
       }
-      if (mt.defaultIntervalMonths) {
-        timePercent = Math.min(100, Math.round((monthsSinceLast / mt.defaultIntervalMonths) * 100));
+      if (intervalMonths) {
+        timePercent = Math.min(100, Math.round((monthsSinceLast / intervalMonths) * 100));
         const nextDueDate = new Date(lastRecord.date);
-        nextDueDate.setMonth(nextDueDate.getMonth() + mt.defaultIntervalMonths);
+        nextDueDate.setMonth(nextDueDate.getMonth() + intervalMonths);
         nextDate = nextDueDate;
       }
     }
@@ -395,8 +425,8 @@ export async function getServiceIntervalStatus(carId: string, currentMileage: nu
 
     return {
       type: mt.name,
-      intervalMiles: mt.defaultIntervalMiles,
-      intervalMonths: mt.defaultIntervalMonths,
+      intervalMiles,
+      intervalMonths,
       lastDate: lastRecord?.date ?? null,
       lastMileage: lastRecord?.mileage ?? null,
       milesSinceLast,
@@ -431,6 +461,8 @@ export async function getMaintenanceForecast(
     orderBy: { date: "desc" },
   });
 
+  const overrides = await db.carMaintenanceOverride.findMany({ where: { carId } });
+
   const forecast: Array<{
     typeId: string;
     typeName: string;
@@ -452,12 +484,14 @@ export async function getMaintenanceForecast(
     let nextDueMileage: number | null = null;
     let nextDueDate: Date | null = null;
 
-    if (mt.defaultIntervalMiles !== null) {
-      nextDueMileage = lastRecord.mileage + mt.defaultIntervalMiles;
+    const { intervalMiles, intervalMonths } = applyOverride(mt, overrides);
+
+    if (intervalMiles !== null && intervalMiles !== undefined) {
+      nextDueMileage = lastRecord.mileage + intervalMiles;
     }
-    if (mt.defaultIntervalMonths !== null) {
+    if (intervalMonths !== null && intervalMonths !== undefined) {
       nextDueDate = new Date(lastRecord.date);
-      nextDueDate.setMonth(nextDueDate.getMonth() + mt.defaultIntervalMonths);
+      nextDueDate.setMonth(nextDueDate.getMonth() + intervalMonths);
     }
 
     forecast.push({
@@ -465,12 +499,97 @@ export async function getMaintenanceForecast(
       typeName: mt.name,
       nextDueMileage,
       nextDueDate,
-      intervalMiles: mt.defaultIntervalMiles,
-      intervalMonths: mt.defaultIntervalMonths,
+      intervalMiles: intervalMiles,
+      intervalMonths: intervalMonths,
       lastRecordDate: lastRecord.date,
       lastRecordMileage: lastRecord.mileage,
     });
   }
 
   return forecast;
+}
+
+/**
+ * Returns a 0–100 health score for a car's maintenance status.
+ * null means no maintenance history exists (N/A).
+ * 100 = all serviced types are current.
+ * Score decreases by up to 25 per overdue type (capped).
+ */
+export async function getMaintenanceHealthScore(
+  carId: string,
+  currentMileage: number,
+  overrides?: Array<{ typeName: string; intervalMiles: number | null; intervalMonths: number | null }>
+): Promise<number | null> {
+  const statusList = await getServiceIntervalStatus(carId, currentMileage, overrides);
+  const withHistory = statusList.filter((s) => s.hasHistory);
+  if (withHistory.length === 0) return null;
+  let penalty = 0;
+  for (const s of withHistory) {
+    if (s.isDue && s.overallPercent > 100) {
+      penalty += Math.min(25, s.overallPercent - 100);
+    }
+  }
+  return Math.max(0, Math.round(100 - penalty));
+}
+
+/**
+ * Batch version — computes health scores for multiple cars in 2 DB queries.
+ * Returns a Map<carId, score | null>.
+ */
+export async function getBatchMaintenanceHealthScores(
+  cars: Array<{ id: string; currentMileage: number }>
+): Promise<Map<string, number | null>> {
+  if (cars.length === 0) return new Map();
+  const carIds = cars.map((c) => c.id);
+  const [types, records, overridesAll] = await Promise.all([
+    db.maintenanceType.findMany(),
+    db.maintenanceRecord.findMany({
+      where: { carId: { in: carIds } },
+      orderBy: { date: "desc" },
+    }),
+    db.carMaintenanceOverride.findMany({ where: { carId: { in: carIds } } }),
+  ]);
+
+  const recordsByCarId = new Map<string, typeof records>();
+  for (const r of records) {
+    if (!recordsByCarId.has(r.carId)) recordsByCarId.set(r.carId, []);
+    recordsByCarId.get(r.carId)!.push(r);
+  }
+
+  const now = new Date();
+  const result = new Map<string, number | null>();
+
+  for (const car of cars) {
+    const carRecords = recordsByCarId.get(car.id) ?? [];
+    const carOverrides = overridesAll.filter((o) => o.carId === car.id);
+    let hasHistory = false;
+    let penalty = 0;
+
+    for (const mt of types) {
+      const lastRecord = carRecords.find((r) => r.type === mt.name);
+      if (!lastRecord) continue;
+      hasHistory = true;
+
+      const override = carOverrides.find((o) => o.typeName === mt.name);
+      const intervalMiles = override ? override.intervalMiles : mt.defaultIntervalMiles;
+      const intervalMonths = override ? override.intervalMonths : mt.defaultIntervalMonths;
+
+      let mileagePercent = 0;
+      let timePercent = 0;
+      if (intervalMiles) {
+        mileagePercent = Math.min(100, Math.round(((car.currentMileage - lastRecord.mileage) / intervalMiles) * 100));
+      }
+      if (intervalMonths) {
+        const months = monthsDiff(lastRecord.date, now);
+        timePercent = Math.min(100, Math.round((months / intervalMonths) * 100));
+      }
+      const overallPercent = Math.max(mileagePercent, timePercent);
+      if (overallPercent >= 100) {
+        penalty += Math.min(25, overallPercent - 100);
+      }
+    }
+
+    result.set(car.id, hasHistory ? Math.max(0, Math.round(100 - penalty)) : null);
+  }
+  return result;
 }

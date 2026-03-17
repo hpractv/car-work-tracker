@@ -165,3 +165,15 @@
 - [ ] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration
 - [ ] Add push notification support for maintenance due reminders
 - [ ] Add per-car maintenance interval overrides (CarMaintenanceOverride model)
+
+## 🔧 Discovered issues (loop)
+- [x] Fix CSV export escaping in maintenance.export.tsx (malformed CSV when fields contain commas/quotes)
+- [x] Add safeRedirect to session.server.ts and sanitize redirectTo in login action (prevent open redirect)
+- [x] Make logout POST-only (remove session destroy on GET)
+- [x] Make getMaintenanceForecast respect per-car overrides (align with other functions)
+- [x] Replace inline months calc with monthsDiff in getBatchMaintenanceHealthScores (consistency)
+- [x] Fix manifest icons sizes in vite.config.ts
+- [ ] Add runtimeCaching rules for images and /api endpoints in vite.config.ts
+- [x] Convert server-only export routes (.tsx -> .ts) to avoid client bundling of server-only loaders
+- [x] Add accessibility improvements to NearbyServicesAlert, OfflineIndicator, AlertBanner, CarCard
+

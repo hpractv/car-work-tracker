@@ -3,7 +3,7 @@ import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from
 import { useLoaderData, Link, useRouteError, isRouteErrorResponse, useSearchParams, Form, useNavigation } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { formatMaintenanceType, formatDate, formatCurrency, formatMileage } from "~/utils/format";
-import { getCarById, updateCarMileage, archiveCar, restoreCar } from "~/models/car.server";
+import { getCarById, updateCarMileage, archiveCar, restoreCar, getCarMaintenanceOverrides, getCarDocuments, getFuelLogs } from "~/models/car.server";
 import { getMaintenanceDue, getServiceIntervalStatus } from "~/models/maintenance.server";
 import MaintenanceList from "~/components/MaintenanceList";
 
@@ -16,8 +16,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const car = await getCarById(params.carId!, userId);
   if (!car) throw new Response("Not Found", { status: 404 });
 
-  const due = await getMaintenanceDue(car.id, car.currentMileage);
-  const intervalStatus = await getServiceIntervalStatus(car.id, car.currentMileage);
+  const overrides = await getCarMaintenanceOverrides(car.id);
+  const due = await getMaintenanceDue(car.id, car.currentMileage, overrides);
+  const intervalStatus = await getServiceIntervalStatus(car.id, car.currentMileage, overrides);
   const userMembership = car.members.find((m) => m.userId === userId);
   const isOwner = userMembership?.role === "owner";
 
@@ -34,7 +35,37 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ])
   );
 
-  return json({ car, due, isOwner, intervalStatus, forecast, isArchived: car.isArchived });
+  const documents = await getCarDocuments(car.id);
+  const now = new Date();
+  const cutoff30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const docCount = documents.length;
+  const expiredDocCount = documents.filter(
+    (d) => d.expiryDate && new Date(d.expiryDate) < now
+  ).length;
+  const expiringDocCount = documents.filter(
+    (d) =>
+      d.expiryDate &&
+      new Date(d.expiryDate) >= now &&
+      new Date(d.expiryDate) <= cutoff30
+  ).length;
+
+  const fuelLogs = await getFuelLogs(car.id);
+  const totalFuelCost = fuelLogs.reduce((s, l) => s + (l.totalCost ?? 0), 0);
+  const totalFuelGallons = fuelLogs.reduce((s, l) => s + l.gallons, 0);
+  const chronoLogs = [...fuelLogs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const fullTankLogs = chronoLogs.filter(l => l.fullTank);
+  const mpgValues: number[] = [];
+  for (let i = 1; i < fullTankLogs.length; i++) {
+    const mileageDiff = fullTankLogs[i].mileage - fullTankLogs[i-1].mileage;
+    if (mileageDiff > 0 && fullTankLogs[i].gallons > 0) {
+      mpgValues.push(mileageDiff / fullTankLogs[i].gallons);
+    }
+  }
+  const avgMpg = mpgValues.length > 0 ? mpgValues.reduce((s,v) => s+v, 0) / mpgValues.length : null;
+  const lastFuelLog = fuelLogs.length > 0 ? fuelLogs[0] : null;
+  const fuelFillUps = fuelLogs.length;
+
+  return json({ car, due, isOwner, intervalStatus, forecast, isArchived: car.isArchived, docCount, expiredDocCount, expiringDocCount, fuelSummary: { totalCost: totalFuelCost, totalGallons: totalFuelGallons, avgMpg, lastFuelDate: lastFuelLog?.date ?? null, fillUps: fuelFillUps } });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -96,7 +127,7 @@ function sortRecords(
 }
 
 export default function CarDetail() {
-  const { car, due, isOwner, intervalStatus, forecast, isArchived } = useLoaderData<typeof loader>();
+  const { car, due, isOwner, intervalStatus, forecast, isArchived, docCount, expiredDocCount, expiringDocCount, fuelSummary } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
@@ -207,11 +238,16 @@ export default function CarDetail() {
           <Link to={`/cars/${car.id}/maintenance/new`} className="btn btn-primary">
             + Add Maintenance
           </Link>
+          <Link to={`/cars/${car.id}/forecast`} className="btn btn-secondary">📅 Schedule</Link>
           <Link to={`/cars/${car.id}/odometer`} className="btn btn-secondary">
             📊 Odometer Log
           </Link>
+          <Link to={`/cars/${car.id}/fuel`} className="btn btn-secondary">⛽ Fuel Log</Link>
+          <Link to={`/cars/${car.id}/documents`} className="btn btn-secondary">📄 Documents</Link>
+          <Link to={`/compare?cars=${car.id}`} className="btn btn-secondary">⚖ Compare</Link>
           {isOwner && (
             <>
+              <Link to={`/cars/${car.id}/overrides`} className="btn btn-secondary">⚙ Service Intervals</Link>
               <Link to={`/cars/${car.id}/edit`} className="btn btn-secondary">Edit</Link>
               <Link to={`/cars/${car.id}/members`} className="btn btn-secondary">Members</Link>
               <Link to={`/cars/${car.id}/delete`} className="btn btn-danger">Delete</Link>
@@ -356,6 +392,24 @@ export default function CarDetail() {
           </div>
         )}
       </div>
+
+      {fuelSummary.fillUps > 0 && (
+        <div className="card">
+          <div className="flex flex-between">
+            <h2>Fuel Economy</h2>
+            <Link to={`/cars/${car.id}/fuel`} className="btn btn-secondary btn-sm">⛽ Fuel Log</Link>
+          </div>
+          <table>
+            <tbody>
+              <tr><th>Fill-ups</th><td>{fuelSummary.fillUps}</td></tr>
+              {fuelSummary.avgMpg && <tr><th>Avg MPG</th><td>{fuelSummary.avgMpg.toFixed(1)} mpg</td></tr>}
+              {fuelSummary.totalGallons > 0 && <tr><th>Total Gallons</th><td>{fuelSummary.totalGallons.toFixed(1)}</td></tr>}
+              {fuelSummary.totalCost > 0 && <tr><th>Total Fuel Cost</th><td>{formatCurrency(fuelSummary.totalCost)}</td></tr>}
+              {fuelSummary.lastFuelDate && <tr><th>Last Fill-up</th><td>{formatDate(fuelSummary.lastFuelDate)}</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Monthly Spending Chart */}
       {hasMonthlyData && (

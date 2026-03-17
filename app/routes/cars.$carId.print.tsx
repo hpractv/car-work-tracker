@@ -2,6 +2,7 @@ import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { getCarById } from "~/models/car.server";
+import { formatMaintenanceType } from "~/utils/format";
 
 const printStyles = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -95,7 +96,7 @@ export default function PrintMaintenance() {
                 {records.map((record, i) => (
                   <tr key={record.id} style={{ background: i % 2 === 0 ? "white" : "#f8fafc" }}>
                     <td style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid #e2e8f0" }}>{new Date(record.date).toLocaleDateString()}</td>
-                    <td style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid #e2e8f0" }}>{record.type.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</td>
+                    <td style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid #e2e8f0" }}>{formatMaintenanceType(record.type)}</td>
                     <td style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid #e2e8f0", textAlign: "right" }}>{record.mileage.toLocaleString()}</td>
                     <td style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid #e2e8f0", textAlign: "right" }}>{record.cost != null ? `$${record.cost.toFixed(2)}` : "—"}</td>
                     <td style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid #e2e8f0" }}>{record.vendor ?? "—"}</td>
@@ -125,7 +126,7 @@ export default function PrintMaintenance() {
                   .sort(([, a], [, b]) => b - a)
                   .map(([type, cost]) => (
                     <tr key={type}>
-                      <td style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid #e2e8f0" }}>{type.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</td>
+                      <td style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid #e2e8f0" }}>{formatMaintenanceType(type)}</td>
                       <td style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid #e2e8f0", textAlign: "right" }}>${cost.toFixed(2)}</td>
                     </tr>
                   ))}
