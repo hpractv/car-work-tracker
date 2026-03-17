@@ -129,3 +129,61 @@ export async function getMaintenanceDue(carId: string, currentMileage: number) {
 
   return due;
 }
+
+export async function getServiceIntervalStatus(carId: string, currentMileage: number) {
+  const types = await db.maintenanceType.findMany();
+  const records = await db.maintenanceRecord.findMany({
+    where: { carId },
+    orderBy: { date: "desc" },
+  });
+
+  return types.map((mt) => {
+    const lastRecord = records.find((r) => r.type === mt.name);
+    const now = new Date();
+    
+    let milesSinceLast: number | null = null;
+    let monthsSinceLast: number | null = null;
+    let mileagePercent: number | null = null;
+    let timePercent: number | null = null;
+    let nextMileage: number | null = null;
+    let nextDate: Date | null = null;
+
+    if (lastRecord) {
+      milesSinceLast = currentMileage - lastRecord.mileage;
+      monthsSinceLast = (now.getTime() - lastRecord.date.getTime()) / (1000 * 60 * 60 * 24 * 30);
+      
+      if (mt.defaultIntervalMiles) {
+        mileagePercent = Math.min(100, Math.round((milesSinceLast / mt.defaultIntervalMiles) * 100));
+        nextMileage = lastRecord.mileage + mt.defaultIntervalMiles;
+      }
+      if (mt.defaultIntervalMonths) {
+        timePercent = Math.min(100, Math.round((monthsSinceLast / mt.defaultIntervalMonths) * 100));
+        const nextDateMs = lastRecord.date.getTime() + mt.defaultIntervalMonths * 30 * 24 * 60 * 60 * 1000;
+        nextDate = new Date(nextDateMs);
+      }
+    }
+
+    const isDue = !!(
+      (mileagePercent !== null && mileagePercent >= 100) ||
+      (timePercent !== null && timePercent >= 100)
+    );
+    const overallPercent = Math.max(mileagePercent ?? 0, timePercent ?? 0);
+
+    return {
+      type: mt.name,
+      intervalMiles: mt.defaultIntervalMiles,
+      intervalMonths: mt.defaultIntervalMonths,
+      lastDate: lastRecord?.date ?? null,
+      lastMileage: lastRecord?.mileage ?? null,
+      milesSinceLast,
+      monthsSinceLast: monthsSinceLast !== null ? Math.floor(monthsSinceLast) : null,
+      mileagePercent,
+      timePercent,
+      nextMileage,
+      nextDate,
+      isDue,
+      overallPercent,
+      hasHistory: !!lastRecord,
+    };
+  });
+}

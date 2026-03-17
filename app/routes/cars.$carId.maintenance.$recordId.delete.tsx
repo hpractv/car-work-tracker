@@ -11,6 +11,7 @@ import {
   getMaintenanceRecord,
   deleteMaintenanceRecord,
 } from "~/models/maintenance.server";
+import { formatMaintenanceType } from "~/utils/format";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -42,7 +43,7 @@ export default function DeleteMaintenance() {
     month: "short",
     day: "numeric",
   });
-  const typeLabel = record.type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const typeLabel = formatMaintenanceType(record.type);
 
   return (
     <div style={{ maxWidth: "500px" }}>

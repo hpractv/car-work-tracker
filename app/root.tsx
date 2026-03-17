@@ -54,6 +54,7 @@ function NavBar({ isLoggedIn }: { isLoggedIn: boolean }) {
         {isLoggedIn ? (
           <>
             <a href="/cars" onClick={() => setMenuOpen(false)}>My Cars</a>
+            <a href="/settings" onClick={() => setMenuOpen(false)}>Settings</a>
             <a href="/profile" onClick={() => setMenuOpen(false)}>Profile</a>
             <Form method="post" action="/logout" style={{ display: "inline" }}>
               <button

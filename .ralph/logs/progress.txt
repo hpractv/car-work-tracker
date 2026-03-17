@@ -84,3 +84,23 @@ Tasks Completed: ✅ All 10
 
 Build result: npm run build ✅ exit code 0 — 120 client modules + 31 SSR modules + PWA service worker (28 precached entries)
 TypeCheck: npm run typecheck ✅ exit code 0
+---
+[2026-03-17] Loop 5
+
+Tasks Attempted:
+- Fix NearbyServicesAlert dueTypes capitalization bug
+- Fix delete maintenance route - use formatMaintenanceType
+- Add service interval progress (getServiceIntervalStatus)
+- Add quick mileage update form on car detail page
+- Add spending by type breakdown card on car detail
+- Add sort controls for maintenance history (URL-persisted)
+- Add CSV export route for maintenance records
+- Improve seed.ts with 11 realistic maintenance types
+- Add Settings page (/settings) with maintenance intervals view
+- Add Settings link to navbar
+
+Tasks Completed: ✅ All 10
+
+Build result: npm run build ✅ exit code 0 — 124 client modules + 33 SSR modules + PWA service worker (30 precached entries)
+TypeCheck: npm run typecheck ✅ exit code 0
+Git: Committed and tagged below.

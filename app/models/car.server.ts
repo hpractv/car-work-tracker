@@ -132,3 +132,14 @@ export async function updateCarMemberRole(
 
   return db.carMember.update({ where: { id: memberId }, data: { role: newRole } });
 }
+
+export async function updateCarMileage(carId: string, newMileage: number, userId: string) {
+  const membership = await db.carMember.findFirst({
+    where: { carId, userId },
+  });
+  if (!membership) throw new Error("Not authorized");
+  return db.car.update({
+    where: { id: carId },
+    data: { currentMileage: newMileage },
+  });
+}

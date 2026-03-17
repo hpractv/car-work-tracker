@@ -117,3 +117,14 @@ When handling `navigator.geolocation.getCurrentPosition` errors, use the numeric
 - `2` = POSITION_UNAVAILABLE
 - `3` = TIMEOUT
 This lets you show targeted messages ("Enable location to find nearby service stations") instead of a generic fallback.
+## CSV Download Routes in Remix
+
+Remix loaders can return a raw `Response` with `Content-Type: text/csv` and `Content-Disposition: attachment; filename="..."` to trigger a CSV download. No React component is needed — the loader is the entire route module. The route file just exports a `loader` function. Vite will warn about "Generated an empty chunk" for these server-only routes — this is expected and harmless.
+
+## Service Interval Progress Bars
+
+For maintenance due UI, compute `overallPercent = Math.max(mileagePercent, timePercent)` capped at 100. Color the progress bar green (<80%), amber (80-99%), or red (>=100%). Always `Math.min(100, percent)` the bar width so it doesn't overflow the container. Store interval status as a derived loader value — never in client state — so it always reflects the latest mileage.
+
+## Quick Mileage Update Pattern
+
+To allow inline mileage updates without navigating to edit page, add a small `<Form method="post">` inside the car detail card with `intent=updateMileage`. Handle it in the route `action` function. Using `redirect(\`/cars/${carId}\`)` after success ensures the page re-renders with fresh data including recalculated interval progress.

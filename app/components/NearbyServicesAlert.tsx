@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import AlertBanner from "./AlertBanner";
+import { formatMaintenanceType } from "~/utils/format";
 
 interface NearbyService {
   name: string;
@@ -79,7 +80,7 @@ export default function NearbyServicesAlert({
     return null;
   }
 
-  const dueTypes = maintenanceDue.map((d) => d.type.replace(/_/g, " ")).join(", ");
+  const dueTypes = maintenanceDue.map((d) => formatMaintenanceType(d.type)).join(", ");
   const nearest = services[0];
 
   return (

@@ -72,8 +72,20 @@
 - [x] Enhanced CarCard — shows last service date and record count below mileage
 - [x] Update cars._index.tsx — passes lastServiceDate and totalRecords to CarCard
 
+## ✅ Completed - Phase 10: Loop 5 Features & Bug Fixes
+- [x] Fix NearbyServicesAlert dueTypes: now uses formatMaintenanceType for proper capitalization
+- [x] Fix delete maintenance route: uses formatMaintenanceType from ~/utils/format instead of inline replace
+- [x] Add getServiceIntervalStatus to maintenance.server.ts — per-type mileage/time progress calculation
+- [x] Add updateCarMileage to car.server.ts — authorized mileage update
+- [x] Enhanced car detail page (cars.$carId.tsx): service schedule progress bars, quick mileage update form, spending by type breakdown, sort controls for maintenance history (URL-persisted)
+- [x] Add CSV export route: /cars/:carId/maintenance/export downloads maintenance history as CSV
+- [x] Improve seed.ts: 11 realistic maintenance types with proper mile/month intervals
+- [x] Add Settings page (/settings): displays all maintenance types and their service intervals
+- [x] Add Settings link to navbar in root.tsx
+
 ## 📋 Future Improvements
 - [ ] Add `v3_singleFetch` future flag (breaking change — requires loader return type migration)
 - [ ] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration
 - [ ] Add app icons in multiple sizes for better PWA compliance
-- [ ] Add offline indicator UI when service worker detects no network
+- [ ] Allow users to customize maintenance type intervals (currently read-only settings page)
+- [ ] Add pagination for cars with many maintenance records

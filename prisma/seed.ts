@@ -8,11 +8,14 @@ async function seed() {
     { name: "oil_change", defaultIntervalMiles: 3000, defaultIntervalMonths: 3 },
     { name: "tire_rotation", defaultIntervalMiles: 5000, defaultIntervalMonths: 6 },
     { name: "brake_service", defaultIntervalMiles: 25000, defaultIntervalMonths: 24 },
-    { name: "filter_replacement", defaultIntervalMiles: 15000, defaultIntervalMonths: 12 },
-    { name: "fluid_check", defaultIntervalMiles: 10000, defaultIntervalMonths: 12 },
+    { name: "air_filter", defaultIntervalMiles: 15000, defaultIntervalMonths: 12 },
+    { name: "cabin_filter", defaultIntervalMiles: 15000, defaultIntervalMonths: 12 },
+    { name: "transmission_service", defaultIntervalMiles: 30000, defaultIntervalMonths: 24 },
+    { name: "spark_plugs", defaultIntervalMiles: 30000, defaultIntervalMonths: 24 },
     { name: "battery_check", defaultIntervalMiles: null, defaultIntervalMonths: 12 },
-    { name: "alignment", defaultIntervalMiles: 15000, defaultIntervalMonths: 12 },
-    { name: "inspection", defaultIntervalMiles: null, defaultIntervalMonths: 12 },
+    { name: "coolant_flush", defaultIntervalMiles: 30000, defaultIntervalMonths: 24 },
+    { name: "wheel_alignment", defaultIntervalMiles: 10000, defaultIntervalMonths: 12 },
+    { name: "wiper_blades", defaultIntervalMiles: null, defaultIntervalMonths: 12 },
   ];
 
   for (const mt of maintenanceTypes) {
