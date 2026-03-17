@@ -17,3 +17,31 @@ Tasks Completed: ✅ All 4
 
 Build result: npm run build ✅ exit code 0 — 116 client modules + 28 SSR modules + PWA service worker generated
 Git: Committed (no remote configured, skipped push). Tagged: 0.0.1
+
+---
+[2026-03-17] Loop 2
+
+Tasks Attempted:
+- Fix PWA service worker registration in root.tsx
+- Add NearbyServicesAlert loading state
+- Fix date timezone bug (UTC midnight → local noon)
+- Add v3_lazyRouteDiscovery future flag
+- Create user profile page (/profile) with name/email/password update
+- Add updateUserProfile and updateUserPassword to user.server.ts
+- Add Profile link in root.tsx nav
+- Auto-update car mileage from maintenance records via Prisma transaction
+- Fix maintenance due logic for cars with no history
+- Add maintenance stats to car detail page
+- Fix Route ID Collision: delete duplicate .js files from app/ source dirs
+- Add noEmit:true to tsconfig.json
+- Create .gitignore, remove build artifacts from git tracking
+
+Tasks Completed: ✅ All 13
+
+Build result: npm run build ✅ exit code 0 — no route collisions, 118 client modules, 29 SSR modules, PWA service worker generated
+TypeCheck: npm run typecheck ✅ exit code 0
+Git: Committed. Tagged: 0.0.2. No remote configured, push skipped.
+
+Notable findings:
+- Root cause of .js file pollution: tsc was running without noEmit, emitting compiled JS into source directories. Fixed with tsconfig noEmit:true.
+- Route ID Collision warnings were caused by these .js duplicates being picked up by Remix route discovery alongside .tsx files.

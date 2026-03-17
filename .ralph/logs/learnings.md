@@ -27,3 +27,40 @@ In Remix, a route loader that needs to read cookies MUST receive the real `reque
 ## Root Loader for Conditional Nav
 
 To show/hide nav links based on auth state, add a `loader` to `root.tsx` that returns `{ isLoggedIn: !!userId }`. Use `useLoaderData<typeof loader>()` in the `App` component. Also, logout should be a `<Form method="post" action="/logout">` button (not an `<a>` tag) so the action handler fires, not the loader.
+
+## Preventing tsc from Emitting JS into Source Directories
+
+In Remix + Vite projects, TypeScript compilation is handled by Vite, NOT by `tsc`. The `tsc` command is only used for type checking (`npm run typecheck`). If `tsconfig.json` lacks `"noEmit": true`, running `tsc` will emit `.js` files next to every `.ts`/`.tsx` source file. These `.js` duplicates then cause Remix Route ID Collision warnings because Remix route discovery picks up both `.tsx` and `.js` versions.
+
+**Fix**: Always add `"noEmit": true` to `tsconfig.json` in Remix+Vite projects.
+
+## Removing Build Artifacts from Git Tracking
+
+If `build/` or other artifacts were committed before a `.gitignore` was created, they remain tracked by git even after adding them to `.gitignore`. To stop tracking them:
+```bash
+git rm -r --cached build/
+git commit -m "chore: stop tracking build artifacts"
+```
+
+## Auto-Updating Car Mileage from Maintenance Records
+
+When a user logs a maintenance record with a mileage higher than the car's recorded `currentMileage`, the car's mileage should be automatically updated. This keeps the maintenance due calculations accurate. Use a Prisma transaction with `updateMany` and a `lt` filter to atomically create the record and conditionally update the car:
+```ts
+db.$transaction(async (tx) => {
+  const record = await tx.maintenanceRecord.create({ data });
+  await tx.car.updateMany({
+    where: { id: data.carId, currentMileage: { lt: data.mileage } },
+    data: { currentMileage: data.mileage },
+  });
+  return record;
+});
+```
+
+## PWA Service Worker Registration in Remix
+
+`vite-plugin-pwa` generates a `registerSW.js` file in the client build, but in a Remix SSR app, this file is NOT auto-injected into the HTML (Remix controls the HTML via `root.tsx`). You must explicitly add it:
+```tsx
+// In root.tsx, inside <body> after <Scripts />
+<script src="/registerSW.js" />
+```
+Without this, the service worker is never registered and the app is not truly a PWA.

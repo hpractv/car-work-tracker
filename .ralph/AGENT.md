@@ -15,3 +15,8 @@
 - Logout must be a `<Form method="post" action="/logout">` — not an anchor tag — so cookies are properly destroyed.
 
 **Dev Login:** `dev@example.com` / `password123`
+
+**Prevent JS Emission from tsc:**
+The `tsconfig.json` has `"noEmit": true` — do NOT remove this. Without it, running `tsc` emits `.js` files next to every TypeScript source file, causing Remix Route ID Collision warnings.
+
+**Git Ignore:** A `.gitignore` is now present covering `node_modules/`, `build/`, `.env`, and Prisma dev database files.

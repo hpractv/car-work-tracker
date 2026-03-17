@@ -35,14 +35,21 @@
 - [x] Web app manifest configured in `vite.config.ts`
 - [x] Workbox `generateSW` with runtime caching
 - [x] `InstallPrompt` component for "Add to Home Screen"
+- [x] Service worker registration: `registerSW.js` loaded in `root.tsx`
 
-## 🔧 Active Bugs / In Progress
-- [x] **BUILD FAILURE**: `~/` path alias not resolved by Rollup — Fix: add `resolve.alias` with `fileURLToPath` to `vite.config.ts`
-- [x] **logout.tsx loader bug**: loader creates fake Request without cookies — Fix: pass real `request` param  
-- [x] **root.tsx no auth check**: nav shows "Logout" even for unauthenticated users — Fix: add loader returning `isLoggedIn`
-- [x] **No dev seed user**: seed.ts only seeds MaintenanceTypes — Fix: add `dev@example.com` / `password123`
+## ✅ Completed - Phase 7: Loop 2 Improvements
+- [x] Fix Route ID Collision: deleted all duplicate `.js` files from app/ source dirs (caused by tsc emitting without noEmit)
+- [x] Add `noEmit: true` to `tsconfig.json` to prevent future JS emission
+- [x] Add `.gitignore` (node_modules, build/, .env, prisma dev.db)
+- [x] User Profile page (`/profile`): update name/email and change password
+- [x] Auto-update car mileage when maintenance record mileage exceeds current car mileage (Prisma transaction)
+- [x] Fix maintenance due logic: skip "no record found" for cars with zero history
+- [x] Add maintenance stats (record count + total cost) to car detail page
+- [x] Fix date timezone bug: parse HTML date inputs as noon local time (not UTC midnight)
+- [x] Loading state in `NearbyServicesAlert` while geolocation/Overpass check runs
+- [x] Add `v3_lazyRouteDiscovery` future flag to reduce Remix warnings
 
 ## 📋 Future Improvements
-- [ ] Add PWA icons (icon-192.png, icon-512.png) to public/icons/ (currently referenced but missing)
 - [ ] Add `entry.server.tsx` for custom server-side rendering (optional, Remix provides default)
 - [ ] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration
+- [ ] Add `v3_singleFetch` future flag (breaking change — requires loader return type migration)
