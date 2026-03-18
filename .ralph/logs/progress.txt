@@ -357,3 +357,18 @@ Tasks Completed:
 - ✅ Added public/registerSW.js
 - ✅ Updated .env.example (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)
 - ✅ npm run build => success (sw.js generated and bundles built)
+---
+[2026-03-18] Loop: Update fix_plan & run build/tests
+
+Tasks Attempted:
+- Updated .ralph/fix_plan.md to mark PWA register, VAPID env var mismatch, SESSION_SECRET documented/resolved
+- Ran npm run build and npm run test:ci
+- Committed changes
+
+Tasks Completed:
+- Marked PWA register script resolved ✅
+- Marked VAPID env var mismatch resolved ✅
+- Marked SESSION_SECRET documented/resolved ✅
+
+Build result: npm run build => success (exit code 0)
+Test result: npm run test:ci => success (exit code 0)

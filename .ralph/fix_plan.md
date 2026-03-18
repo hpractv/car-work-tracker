@@ -184,8 +184,8 @@
 - [x] Remove committed Prisma dev DB (prisma/dev.db) — removed nested prisma/prisma/dev.db from repo and added .gitignore entry (prisma/**/dev.db); next: rotate any leaked data if necessary.
 - [x] Add .env.example documenting DATABASE_URL & SESSION_SECRET — .env.example created; next: ensure CI provides SESSION_SECRET and DATABASE_URL.
 - [x] Add .ralph/specs/app_spec.md placeholder — app_spec.md created; next: expand specs with detailed acceptance criteria.
-- [ ] Ensure SESSION_SECRET is set in production & document — production not enforced; next: fail startup if SESSION_SECRET is absent and document requirements in the fix plan and .env.example.
-- [ ] Discovered: PWA register script missing (/registerSW.js referenced in app/root.tsx but file absent). Action: add public/registerSW.js or change root.tsx to use virtual:pwa-register. Files: app/root.tsx, public/registerSW.js, vite.config.ts
-- [ ] Discovered: VAPID env var mismatch (.env.example uses VITE_PUBLIC_VAPID_*, server expects VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY). Action: standardize names and update .env.example; update app/utils/webpush.server.ts if necessary.
+- [x] Ensure SESSION_SECRET is set in production & document — session.server.ts now throws in production; .env.example documents SESSION_SECRET.
+- [x] Discovered: PWA register script missing (/registerSW.js referenced in app/root.tsx but file absent). Action: added public/registerSW.js to resolve (2026-03-18).
+- [x] Discovered: VAPID env var mismatch (.env.example uses VITE_PUBLIC_VAPID_*, server expects VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY). Action: updated .env.example to include VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY (2026-03-18).
 - [x] Resolved: PWA register script missing — added public/registerSW.js to satisfy root.tsx (2026-03-18)
 - [x] Resolved: VAPID env var mismatch — updated .env.example to include VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY (2026-03-18)
