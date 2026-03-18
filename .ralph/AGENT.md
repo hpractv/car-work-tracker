@@ -7,3 +7,4 @@ Build & Test Quick Commands:
 Notes:
 - Ensure SESSION_SECRET and DATABASE_URL are set in environment (CI/prod).
 - Use npm run check:no-dev-db to detect accidentally committed Prisma dev.db.
+\n- Note: Automated git push may fail in this environment if 'origin' is not configured or credentials are missing. Ensure CI agent has git remote & auth.
