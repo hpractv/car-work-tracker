@@ -808,3 +808,4 @@ Tasks Completed:
 - npm run test:ci ✅
 
 Notes: No incomplete tasks found in .ralph/fix_plan.md; no code changes required this loop.
+2026-03-18T07:03:22.2002701-06:00  Implemented env preflight check (scripts/check-env.cjs), generate-vapid script, and check-pwa-assets script. Updated package.json scripts and CI to run check:env before build.

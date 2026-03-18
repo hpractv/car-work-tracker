@@ -20,6 +20,8 @@ jobs:
         run: npm ci
       - name: Check for committed prisma dev DB
         run: npm run check:no-dev-db
+      - name: Check required envs
+        run: npm run check:env
       - name: Build
         run: npm run build
       - name: Run tests

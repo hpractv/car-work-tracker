@@ -325,3 +325,4 @@ pm run test:ci) passed.
 - Appended progress and learning logs; created local git tag 0.0.49.
 
 - [x] Loop: verified build & tests (2026-03-18T12:28:05Z) — no code changes required.
+\n## Updates: Implemented in this iteration\n- [x] Added scripts/generate-vapid.cjs (gen:vapid) to help generate VAPID keys.\n- [x] Added scripts/check-env.cjs and wired into CI (check:env).\n- [x] Added scripts/check-pwa-assets.cjs (check:pwa-assets).\n
