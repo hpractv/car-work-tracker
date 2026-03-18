@@ -343,3 +343,11 @@ Observed that safeRedirect accepts strings starting with '/' but a value like '/
 ### PWA icon fallback
 
 Using /favicon.svg as a fallback prevents 404s when PNG icon assets are missing, and the VitePWA manifest can reference favicon.svg without breaking. For broader compatibility (iOS home screen and older Android devices), add PNG icons (e.g., 192x192, 512x512) into public/icons and list them in the manifest.
+### 2026-03-18: Quick run notes
+
+- Build and tests run: 
+pm run build and 
+pm test both succeeded.
+- Dev warnings: SESSION_SECRET not set triggers a benign console warning; set in CI.
+- VAPID: ephemeral VAPID keys generated during tests — set env vars in CI for stability.
+- Empty client chunks for server-only routes are harmless (Vite emits small stub files). Using .ts for server-only routes reduces client bundle size, though empty stubs may still be produced.
