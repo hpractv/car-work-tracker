@@ -1,8 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { formatMaintenanceType, formatDate, formatCurrency, formatMileage, getMaintenanceCategory } from '../app/utils/format';
 import { monthsDiff } from '../app/utils/date';
 import { safeRedirect } from '../app/session.server';
-import { getPublicVapidKey } from '../app/utils/webpush.server';
 
 describe('utils/format', () => {
   it('formatMaintenanceType converts snake_case to Title Case', () => {
@@ -41,16 +40,5 @@ describe('session.server', () => {
     expect(safeRedirect('//evil.com')).toBe('/');
     expect(safeRedirect(null)).toBe('/');
     expect(safeRedirect('/')).toBe('/');
-  });
-});
-
-describe('webpush', () => {
-  it('getPublicVapidKey returns null by default and reads env var', () => {
-    const prev = process.env.VAPID_PUBLIC_KEY;
-    delete process.env.VAPID_PUBLIC_KEY;
-    expect(getPublicVapidKey()).toBeNull();
-    process.env.VAPID_PUBLIC_KEY = 'TEST_KEY';
-    expect(getPublicVapidKey()).toBe('TEST_KEY');
-    if (prev !== undefined) process.env.VAPID_PUBLIC_KEY = prev; else delete process.env.VAPID_PUBLIC_KEY;
   });
 });

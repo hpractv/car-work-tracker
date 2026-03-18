@@ -2,9 +2,9 @@
  * Formats a maintenance type key (e.g. "oil_change") into a readable title case string (e.g. "Oil Change").
  */
 export function formatMaintenanceType(type: string): string {
-  return type
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+  const words = String(type).split(/_+/).filter(Boolean);
+  return words
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(" ");
 }
 
@@ -12,7 +12,9 @@ export function formatMaintenanceType(type: string): string {
  * Formats a Date or ISO string into a human-readable date (e.g. "Jan 15, 2024").
  */
 export function formatDate(date: Date | string): string {
-  return new Date(date).toLocaleDateString("en-US", {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",

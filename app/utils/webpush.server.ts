@@ -1,8 +1,8 @@
 import webPush from "web-push";
 
 let ephemeralPublicKey: string | null = null;
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY?.trim() || undefined;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY?.trim() || undefined;
 
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webPush.setVapidDetails("mailto:dev@example.com", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
@@ -24,7 +24,9 @@ if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
 }
 
 export function getPublicVapidKey(): string | null {
-  return process.env.VAPID_PUBLIC_KEY ?? ephemeralPublicKey ?? null;
+  const envKey = process.env.VAPID_PUBLIC_KEY?.trim();
+  if (envKey) return envKey;
+  return ephemeralPublicKey ?? null;
 }
 
 export async function sendPushNotification(subscription: { endpoint: string; keys: { p256dh: string; auth: string } }, payload: string) {

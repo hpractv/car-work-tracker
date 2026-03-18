@@ -8,6 +8,11 @@ describe('utils/format', () => {
     expect(formatMaintenanceType('')).toBe('');
   });
 
+  it('formatMaintenanceType normalizes uppercase and multiple underscores', () => {
+    expect(formatMaintenanceType('OIL_CHANGE')).toBe('Oil Change');
+    expect(formatMaintenanceType('_oil__change_')).toBe('Oil Change');
+  });
+
   it('formatDate accepts Date and ISO string', () => {
     const d = new Date('2024-01-15T12:00:00Z');
     expect(formatDate(d)).toBe(formatDate(d.toISOString()));

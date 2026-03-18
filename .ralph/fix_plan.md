@@ -227,3 +227,15 @@ pm test to verify baseline; build and tests succeeded.
 
 
 - [x] Removed public/registerSW.js; standardized on virtual:pwa-register client registration (entry.client.tsx import) (2026-03-18T04:37:14Z)
+
+## Iteration 4 - 2026-03-18
+- Tasks Attempted: implement format util normalization, improve CSV escaping/sanitizeFilename, fix safeRedirect double-encoding, normalize webpush env vars, add/extend unit tests for format/csv/date/session/webpush, run build & tests
+- Tasks Completed: 
+  - Updated app/utils/format.ts to normalize maintenance type formatting and guard invalid dates ✅
+  - Improved app/utils/csv.ts to quote fields with leading/trailing whitespace and collapse filename separators ✅
+  - Patched app/session.server.ts safeRedirect to reject double-encoded percent-encoded slashes/backslashes ✅
+  - Normalized VAPID env handling in app/utils/webpush.server.ts and made getPublicVapidKey robust to empty strings ✅
+  - Added/updated unit tests: tests/format.test.ts, tests/csv.test.ts, tests/session.server.test.ts, tests/webpush.test.ts, tests/date.test.ts ✅
+  - npm run build ✅, npm test ✅ (all tests passed)
+- Notes: All tests pass locally; updated fix_plan and logs. Temporary note: SESSION_SECRET warning shown in test environment — tests run with default insecure secret; ensure CI provides SESSION_SECRET.
+

@@ -13,4 +13,9 @@ describe('utils/date', () => {
     expect(monthsDiff(new Date('2021-01-01'), new Date('2021-02-01'))).toBe(1);
     expect(monthsDiff(new Date('2021-02-01'), new Date('2021-02-01'))).toBe(0);
   });
+
+  it('monthsDiff handles leap year and end-of-month transitions (numeric dates for determinism)', () => {
+    expect(monthsDiff(new Date(2020, 1, 29), new Date(2020, 2, 1))).toBe(1); // Feb29 -> Mar1
+    expect(monthsDiff(new Date(2021, 0, 31), new Date(2021, 1, 28))).toBe(1); // Jan31 -> Feb28
+  });
 });

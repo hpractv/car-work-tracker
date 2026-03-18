@@ -537,3 +537,8 @@ Notes: entry.client.tsx imports register-sw-client.ts which uses virtual:pwa-reg
 - Tasks Attempted: remove static public/registerSW.js; standardize SW registration via virtual:pwa-register; update .ralph/fix_plan.md and logs; run build & tests.
 - Tasks Completed: removed public/registerSW.js ✅; updated .ralph/fix_plan.md ✅; build succeeded ✅; tests passed (28) ✅
 
+
+[2026-03-17T23:17:23.1854629-06:00] Iteration 4 - Implemented fixes
+Tasks Attempted: format/csv/safeRedirect/webpush changes
+Tasks Completed: format.ts, csv.ts, session.server.ts, webpush.server.ts, updated tests; build & tests passed
+

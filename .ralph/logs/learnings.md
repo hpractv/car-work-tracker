@@ -367,3 +367,7 @@ pm test both succeeded.
 ### Virtual PWA register integration
 Migrated away from static public/registerSW.js to virtual:pwa-register client-only registration imported from entry.client.tsx. This keeps SW registration out of SSR HTML and avoids stale static scripts.
 
+
+### Webpush & safeRedirect
+Normalized VAPID env vars and re-check decoded redirect targets (double-encoding) to prevent open-redirects. Use vi.resetModules() to test module-level init that reads env vars.
+

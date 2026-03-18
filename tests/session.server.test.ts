@@ -15,6 +15,9 @@ describe('session.server', () => {
     expect(safeRedirect('/%2f%2Fevil.com')).toBe('/');
     expect(safeRedirect('/path%5Cto')).toBe('/');
     expect(safeRedirect('/some%20path')).toBe('/some%20path');
+    // double-encoded attacks should also be rejected
+    expect(safeRedirect('/%252F%252Fevil.com')).toBe('/');
+    expect(safeRedirect('/%255Cevil.com')).toBe('/');
   });
 
   it('safeRedirect rejects malformed percent sequences', () => {
