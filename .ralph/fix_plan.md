@@ -171,10 +171,10 @@
 - [x] Extract monthsDiff to app/utils/date.ts and add tests (2026-03-18)
 - [x] Add unit tests for session.server.safeRedirect (2026-03-18)
 - [x] Add unit tests for webpush.getPublicVapidKey (2026-03-18)
-- [ ] Increase Vitest coverage by adding more unit tests (baseline)
-- [ ] Update .ralph/AGENT.md with concise build/test instructions
+- [x] Increase Vitest coverage by adding more unit tests (baseline)
+- [x] Update .ralph/AGENT.md with concise build/test instructions
 - [x] Consider replacing registerSW.js with virtual:pwa-register approach for better integration
-- [ ] Improve PWA manifest icons sizes and verify assets
+- [x] Improve PWA manifest icons sizes and verify assets
 - [x] Add tests for session.requireUserId redirect flow (non-authenticated)
 - [x] Add simple test for CSV export escaping function
 

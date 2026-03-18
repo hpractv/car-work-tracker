@@ -3,6 +3,7 @@ import { requireUserId } from "~/session.server";
 import { getCarsForUser } from "~/models/car.server";
 import { db } from "~/db.server";
 import { formatMaintenanceType } from "~/utils/format";
+import { escapeCsvField } from "~/utils/csv";
 
 function escapeCsvField(value: string | number | null | undefined): string {
   if (value == null) return "";

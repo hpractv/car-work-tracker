@@ -1,5 +1,13 @@
 # Agent Instructions
 
+Quick commands:
+- npm run dev        # start Remix dev server
+- npm run build      # build production bundle (generates sw.js)
+- npm run test       # run tests locally
+- npm run test:ci    # run tests in CI/headless mode
+
+# Agent Instructions
+
 - **Run Dev Server:** Use `npm run dev` to start the Remix development server.
 - **Database Studio:** Use `npx prisma studio` to view the SQLite database.
 - **Database Push:** Use `npx prisma db push` to push schema changes to the SQLite database.
