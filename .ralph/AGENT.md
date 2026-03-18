@@ -23,3 +23,6 @@ CI:
 - Use npm run test:ci to run tests in CI (headless).
 
 That's it — minimal steps to build and test the project.
+
+- Note: The app uses virtual:pwa-register for client-side SW registration. Do not add static public/registerSW.js; if present it is redundant and will be removed.
+
