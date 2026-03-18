@@ -193,6 +193,12 @@
 
 ## Discovered Issues - Loop 12
 
+- [ ] safeRedirect accepts strings starting with '/', but percent-encoded slashes (e.g., '/%2F%2Fevil.com') decode to '//evil.com' — open-redirect risk.
+- [ ] Add unit tests for encoded-slash payloads (e.g., '/%2F%2Fevil.com') and for decode-and-validate behavior.
+- [ ] Fix: either reject percent-encoded slashes or decode-then-validate that decoded value starts with a single '/' (not '//') and contains no scheme/host.
+- [ ] Add CI regression test and update docs.
+
+
 - [x] Add test suite & Vitest configuration — vitest.config.ts and a tests/ scaffold exist; unit/integration tests added and Vitest run verified (1 passing test).
 - [x] Remove committed Prisma dev DB (prisma/dev.db) — removed nested prisma/prisma/dev.db from repo and added .gitignore entry (prisma/**/dev.db); next: rotate any leaked data if necessary.
 - [x] Add .env.example documenting DATABASE_URL & SESSION_SECRET — .env.example created; next: ensure CI provides SESSION_SECRET and DATABASE_URL.

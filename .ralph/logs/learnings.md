@@ -332,3 +332,7 @@ When manifest icons referenced missing PNGs, VitePWA still built but the manifes
 ### 2026-03-18: Baseline green + build notes
 
 Ran Vitest (CI) and production build. All tests passed (23). Vite PWA generateSW produced sw.js; VAPID keys are generated in dev. Empty client chunks for server-only routes are expected when routes are server-only; ensure server-only routes use .ts and avoid client-side exports.
+### Harden safeRedirect against percent-encoded slashes
+
+Observed that safeRedirect accepts strings starting with '/' but a value like '/%2F%2Fevil.com' decodes to '//evil.com' and could allow open-redirects. Add tests and either reject percent-encoded slashes or decode-and-validate. Also: VAPID keys are generated ephemeral during tests; set VAPID_* env vars in CI. SESSION_SECRET missing warns in dev — ensure CI sets SESSION_SECRET.
+
