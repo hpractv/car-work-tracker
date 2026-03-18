@@ -12,7 +12,8 @@
     "typecheck": "tsc",
     "test": "vitest",
     "test:ci": "vitest --run",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "check:no-dev-db": "node ./scripts/check-no-dev-db.js"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
