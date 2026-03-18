@@ -511,3 +511,7 @@ In this environment the 'origin' remote is not configured or not accessible. Com
 ### 2026-03-18T07:47:13.9052663-06:00 - Build & Test loop
 Build and tests passed (44 tests). Note: SESSION_SECRET not set in environment causes an insecure-default warning during tests; set for production. Vite may emit empty client chunks for server-only routes; ensure server-only routes are authored as .ts to avoid client bundling. 
 
+
+### Faster build/test loop — 2026-03-18
+Run 'npm run build && npm run test:ci' to verify production build and CI tests quickly; prefer updating logs and committing only when source changes occur.
+
