@@ -206,6 +206,11 @@ try {
 
 Created a session plan in the Copilot session state and ran the production build and CI-mode tests. Observed all tests passing (28) and a successful production build. No functional code changes were required in this iteration; repository is currently stable. Next iteration will implement any remaining items from .ralph/fix_plan.md or address regressions if discovered.
 
+## 2026-03-18: Git remote missing
+
+Observed `git push` failing with "origin does not appear to be a git repository" in the local environment. When automating commits or tagging, verify the remote repository and credentials are configured in the environment (CI tokens / SSH keys). If push fails, create tags locally and document the tag so it can be pushed from a machine with access.
+
+
 ## Batch Prisma Queries for Maintenance Due Calculations
 
 The `getMaintenanceDue(carId, mileage)` function does 2 DB queries per car. When the dashboard loads for a user with N cars, this creates 2N queries just for due-maintenance checks (plus another 2N for approaching). Fix: add `getBatchMaintenanceDue(cars)` that loads all types once and all records for all carIds in one query, then computes results in-memory per car. Reduces from 2N queries to 2 queries. Apply the same pattern to `getBatchMaintenanceApproaching`. Both use a `Map<carId, results[]>` return type for O(1) lookup per car.
