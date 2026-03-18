@@ -296,3 +296,5 @@ pm run test:ci) passed.
 - Updated .ralph/logs/progress.txt and .ralph/logs/learnings.md; updated .ralph/AGENT.md with push-note.
 ## Iteration (automated) - 2026-03-18
 - Verified build and tests (44 tests). No changes required; session plan created at session-state/plan.md.
+## Iteration 2026-03-18 — Selected session tasks
+- Created session-state/plan.md listing top-10 tasks to improve tests, PWA assets, and small hardening fixes. (plan created at .copilot/session-state/.../plan.md)
