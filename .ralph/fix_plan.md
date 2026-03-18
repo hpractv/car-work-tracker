@@ -177,6 +177,8 @@
 - [x] Improve PWA manifest icons sizes and verify assets
 - [x] Add tests for session.requireUserId redirect flow (non-authenticated)
 - [x] Add simple test for CSV export escaping function
+- [x] Add unit tests for app/models/car.server.ts (2026-03-18)
+- [x] Add unit tests for app/models/push.server.ts (2026-03-18)
 
 
 ## 🔧 Discovered issues (loop)

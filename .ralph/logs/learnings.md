@@ -385,6 +385,12 @@ Converting .tsx -> .ts for server-only routes prevents them from being included 
 Adding a favicon.svg entry to the web app manifest provides a vector icon alternative; keep PNG sizes for broad compatibility. Standardized the VAPID env doc to VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY and optional VITE_PUBLIC_VAPID_KEY for client exposure.
 ## Build & Test loop — 2026-03-18
 
+### 2026-03-18: Mocking Prisma in Vitest
+
+When testing server modules that import from `~/db.server` (the Prisma client), use the `vi.mock('~/db.server', () => ({ db: { ... } }))` factory pattern. Exported mock functions (e.g., `db.carMember.findFirst`) can then be set in tests with `mockResolvedValue` / `mockResolvedValueOnce`. Use `vi.resetAllMocks()` in `beforeEach()` and `vi.setSystemTime()` for deterministic date math. This keeps tests deterministic and avoids touching the real database, making it safe to run in CI.
+
+## Build & Test loop — 2026-03-18
+
 Verified that the Remix PWA builds and tests pass locally (npm run build, npm test). Key learnings:
 - Use virtual:pwa-register in entry.client.tsx to avoid committing registerSW.js to public/.
 - Ensure SESSION_SECRET and DATABASE_URL are provided in CI to avoid warnings.
