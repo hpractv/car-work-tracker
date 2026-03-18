@@ -303,3 +303,6 @@ For redirects coming from user-supplied input (redirectTo), implement a `safeRed
 
 ## Runtime caching for PWA
 Added image and /api runtimeCaching rules to vite.config.ts to improve offline UX.
+## Push Notifications: server & keys
+
+Added Web Push support: server stores push subscriptions and can send test notifications via `web-push`. For production, set `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in `.env`. If keys are absent in development, ephemeral keys are generated (not persisted) and the generated public key is logged to the server console for quick manual testing.

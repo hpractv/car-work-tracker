@@ -56,3 +56,9 @@ Dashboard | My Cars | History | Reports | Settings | Profile | Logout
 **New Routes Added (Loop 8):**
 - `/maintenance` — Global maintenance history across all cars (server-side filter/sort/pagination)
 - `/cars/export` — Fleet-wide CSV download (cars.export.tsx)
+
+**Push Notifications Support:**
+- Server: `web-push` is used to send Web Push notifications. Install with `npm install web-push` when needed.
+- Env: Set `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in `.env` for production. If not set, ephemeral keys are generated for development (not persisted).
+- Routes: `/api/push/subscribe`, `/api/push/unsubscribe`, and `/api/push/send-test` handle subscription storage and test sends.
+- Client: The Settings page includes a PushManager component to subscribe/unsubscribe and send a test notification.

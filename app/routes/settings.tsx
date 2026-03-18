@@ -1,7 +1,6 @@
 import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useActionData, useNavigation, Link, Form } from "@remix-run/react";
-import React from "react";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Prisma } from "@prisma/client";
 import { requireUserId } from "~/session.server";
 import {
@@ -12,6 +11,7 @@ import {
 } from "~/models/maintenance.server";
 import { formatMaintenanceType, getMaintenanceCategory } from "~/utils/format";
 import { db } from "~/db.server";
+import PushManager from "~/components/PushManager";
 
 export function meta() {
   return [{ title: "Settings — Car Work Tracker" }];
@@ -34,7 +34,7 @@ const DEFAULT_TYPES = [
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireUserId(request);
   const types = await getMaintenanceTypes();
-  return json({ types });
+  return json({ types, vapidPublicKey: process.env.VAPID_PUBLIC_KEY ?? null });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -111,7 +111,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Settings() {
-  const { types } = useLoaderData<typeof loader>();
+  const { types, vapidPublicKey } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
@@ -288,6 +288,8 @@ export default function Settings() {
           </button>
         </Form>
       </div>
+
+      <PushManager vapidPublicKey={vapidPublicKey} />
 
       <div className="card" style={{ marginTop: "1.5rem" }}>
         <h2 style={{ marginTop: 0 }}>Restore Defaults</h2>

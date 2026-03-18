@@ -300,3 +300,20 @@ Tasks Completed:
 - Appended progress & learnings logs ✅
 - Committed changes and created tag 0.0.13 ✅
 
+---
+[2026-03-18] Loop 12
+
+Tasks Attempted:
+- Add push notification support: Prisma model, DB push, server endpoints, client UI (PushManager), web-push install.
+
+Tasks Completed: ✅
+- PushSubscription Prisma model added and applied via `npx prisma db push` ✅
+- API routes `/api/push/subscribe`, `/api/push/unsubscribe`, `/api/push/send-test` created ✅
+- `PushManager` React component added and integrated into /settings ✅
+- `web-push` installed and server send helper added ✅
+- Build result: `npm run build` ✅ exit code 0
+- .ralph/fix_plan.md updated (marked push notifications complete) ✅
+
+Build/test notes: build succeeded after schema and component changes; generated service worker and client bundles.
+
+---

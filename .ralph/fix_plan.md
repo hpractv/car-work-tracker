@@ -163,7 +163,7 @@
 
 ## 📋 Future Improvements
 - [ ] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration
-- [ ] Add push notification support for maintenance due reminders
+- [x] Add push notification support for maintenance due reminders — subscription storage, server endpoints, client subscribe UI, and test send route implemented
 - [x] Add per-car maintenance interval overrides (CarMaintenanceOverride model)
 
 ## 🔧 Discovered issues (loop)
