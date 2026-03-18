@@ -331,3 +331,29 @@ Tasks Completed: ✅
 
 Test result: npm run test => 1 passed, exit code 0
 ---
+---
+[2026-03-18] Loop 12 (continued)
+
+Tasks Attempted:
+- Run build to verify production bundle
+- Remove committed Prisma dev DB and update .gitignore
+
+Tasks Completed: ✅
+- Build: npm run build => success (exit code 0)
+- Removed nested prisma/prisma/dev.db from repo and added ignore pattern
+- Updated .ralph/fix_plan.md to mark dev DB removal done
+
+Git: commits created locally; push failed (no remote configured)
+Pending: Ensure SESSION_SECRET is set in production; rotate any leaked DB data if required
+---
+[2026-03-18] Loop: PWA/Env fixes
+
+Tasks Attempted:
+- Add public/registerSW.js (fix missing registration)
+- Standardize VAPID env names in .env.example
+- Run npm run build
+
+Tasks Completed:
+- ✅ Added public/registerSW.js
+- ✅ Updated .env.example (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)
+- ✅ npm run build => success (sw.js generated and bundles built)
