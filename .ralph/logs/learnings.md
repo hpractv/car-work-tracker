@@ -487,3 +487,8 @@ Ran production build and CI tests; all tests passed (44). Learning: use 'npm run
 
 Verified production build and CI tests passed (44 tests). SESSION_SECRET warning appears in dev: ensure CI sets SESSION_SECRET to avoid insecure default.
 
+### Build/Test verification (2026-03-18T07:23:21.0238032-06:00)
+
+Verified production build and CI tests passed without code changes. Use 
+pm run test:ci for single-run CI tests; 
+pm test runs Vitest in watch mode by default.
