@@ -181,7 +181,7 @@
 ## Discovered Issues - Loop 12
 
 - [x] Add test suite & Vitest configuration — vitest.config.ts and a tests/ scaffold exist; unit/integration tests added and Vitest run verified (1 passing test).
-- [ ] Remove committed Prisma dev DB (prisma/dev.db) — prisma/dev.db is checked into repo; next: git rm --cached prisma/dev.db, add prisma/dev.db to .gitignore, and rotate any leaked data.
+- [x] Remove committed Prisma dev DB (prisma/dev.db) — removed nested prisma/prisma/dev.db from repo and added .gitignore entry (prisma/**/dev.db); next: rotate any leaked data if necessary.
 - [x] Add .env.example documenting DATABASE_URL & SESSION_SECRET — .env.example created; next: ensure CI provides SESSION_SECRET and DATABASE_URL.
 - [x] Add .ralph/specs/app_spec.md placeholder — app_spec.md created; next: expand specs with detailed acceptance criteria.
 - [ ] Ensure SESSION_SECRET is set in production & document — production not enforced; next: fail startup if SESSION_SECRET is absent and document requirements in the fix plan and .env.example.
