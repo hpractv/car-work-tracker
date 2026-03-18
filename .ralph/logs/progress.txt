@@ -290,3 +290,13 @@ Build result: pending - will run npm run build after these changes
 
 
 [2026-03-17] Added runtimeCaching rules (images + /api) in vite.config.ts ✅
+
+---
+[2026-03-17] Loop: RuntimeCaching change applied; build & typecheck passed; tag 0.0.13 created
+
+Tasks Completed:
+- Add runtimeCaching rules for images and /api endpoints in vite.config.ts ✅
+- Mark per-car maintenance overrides as completed in fix_plan.md ✅
+- Appended progress & learnings logs ✅
+- Committed changes and created tag 0.0.13 ✅
+

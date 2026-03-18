@@ -164,7 +164,7 @@
 ## 📋 Future Improvements
 - [ ] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration
 - [ ] Add push notification support for maintenance due reminders
-- [ ] Add per-car maintenance interval overrides (CarMaintenanceOverride model)
+- [x] Add per-car maintenance interval overrides (CarMaintenanceOverride model)
 
 ## 🔧 Discovered issues (loop)
 - [x] Fix CSV export escaping in maintenance.export.tsx (malformed CSV when fields contain commas/quotes)
