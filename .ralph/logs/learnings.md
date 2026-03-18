@@ -312,3 +312,5 @@ Vitest with environment "jsdom" may prompt to install jsdom when the package is 
 Adding a small public/registerSW.js script is a simple compatibility fallback when root.tsx references a static registration script. VitePWA generates build/client/sw.js; ensure registration path (/sw.js) matches plugin output. Standardize server-side VAPID env names (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY) and document them in .env.example to avoid mismatches between client and server code.
 ### 2026-03-18: Keep fix_plan.md in sync
 Update .ralph/fix_plan.md immediately when issues are discovered/resolved to avoid duplicates. session.server.ts now enforces SESSION_SECRET in production; document this in .env.example and AGENT.md.
+### 2026-03-18: Test strategy and small refactors
+Small, testable utility functions are easier to unit test when extracted into dedicated modules (e.g., monthsDiff). Keep business logic in small utilities to enable high-quality unit tests without hitting the database.

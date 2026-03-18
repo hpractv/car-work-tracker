@@ -386,3 +386,15 @@ Tasks Completed:
 - ✅ Updated .ralph/fix_plan.md to record short-term tasks and marked completed items
 
 Test result: npm run test:ci => success (all tests passed, exit code 0)
+---
+[2026-03-18] Loop: Add unit tests & extract monthsDiff (finalize)
+
+Tasks Attempted:
+- Finalized extraction of monthsDiff to app/utils/date.ts and updated imports
+- Added unit tests covering format utilities, monthsDiff, safeRedirect, and getPublicVapidKey
+
+Tasks Completed:
+- ✅ monthsDiff extraction + root.tsx import update
+- ✅ tests added and passing (vitest) ✅
+
+Test result: npm run test:ci => success (exit code 0)
