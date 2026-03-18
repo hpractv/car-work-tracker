@@ -398,3 +398,20 @@ Tasks Completed:
 - ✅ tests added and passing (vitest) ✅
 
 Test result: npm run test:ci => success (exit code 0)
+---
+[2026-03-18] Loop 13
+
+Tasks Attempted:
+- Add CSV escape utility and tests
+- Add tests for requireUserId redirect flow
+- Replace registerSW.js script injection with virtual:pwa-register client registration and import in entry.client.tsx
+- Update .ralph/fix_plan.md to mark these items done
+- Run tests and build
+
+Tasks Completed: ✅ All 5
+- Created app/utils/csv.ts and tests/csv.test.ts ✅
+- Added tests/session.test.ts for requireUserId redirect ✅
+- Replaced registerSW script usage with client-side register (app/register-sw-client.ts) and updated entry.client.tsx/root.tsx ✅
+- Updated .ralph/fix_plan.md ✅
+- Ran tests and build: tests passed (10 passed), build succeeded ✅
+

@@ -173,10 +173,10 @@
 - [x] Add unit tests for webpush.getPublicVapidKey (2026-03-18)
 - [ ] Increase Vitest coverage by adding more unit tests (baseline)
 - [ ] Update .ralph/AGENT.md with concise build/test instructions
-- [ ] Consider replacing registerSW.js with virtual:pwa-register approach for better integration
+- [x] Consider replacing registerSW.js with virtual:pwa-register approach for better integration
 - [ ] Improve PWA manifest icons sizes and verify assets
-- [ ] Add tests for session.requireUserId redirect flow (non-authenticated)
-- [ ] Add simple test for CSV export escaping function
+- [x] Add tests for session.requireUserId redirect flow (non-authenticated)
+- [x] Add simple test for CSV export escaping function
 
 
 ## 🔧 Discovered issues (loop)

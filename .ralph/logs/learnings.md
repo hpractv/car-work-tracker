@@ -314,3 +314,7 @@ Adding a small public/registerSW.js script is a simple compatibility fallback wh
 Update .ralph/fix_plan.md immediately when issues are discovered/resolved to avoid duplicates. session.server.ts now enforces SESSION_SECRET in production; document this in .env.example and AGENT.md.
 ### 2026-03-18: Test strategy and small refactors
 Small, testable utility functions are easier to unit test when extracted into dedicated modules (e.g., monthsDiff). Keep business logic in small utilities to enable high-quality unit tests without hitting the database.
+### PWA registration: prefer virtual:pwa-register
+
+Using `virtual:pwa-register` and importing a small client-only module (imported from `entry.client.tsx`) provides a cleaner integration with VitePWA in a Remix app than inserting a static `/registerSW.js` script tag in the server-rendered HTML. This keeps SW registration in client-only code and avoids mismatches between dev/build artifacts.
+

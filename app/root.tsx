@@ -199,7 +199,7 @@ export default function App() {
         </main>
         <ScrollRestoration />
         <Scripts />
-        <script src="/registerSW.js" />
+
       </body>
     </html>
   );
