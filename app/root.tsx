@@ -21,7 +21,7 @@ import { monthsDiff } from "~/utils/date";
 export const links: LinksFunction = () => [
   { rel: "manifest", href: "/manifest.webmanifest" },
   { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
-  { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
+  { rel: "apple-touch-icon", href: "/favicon.svg" },
 ];
 
 

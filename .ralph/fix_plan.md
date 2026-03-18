@@ -180,6 +180,7 @@
 
 
 ## 🔧 Discovered issues (loop)
+- [x] Missing PWA icon assets (apple-touch-icon / icons/icon-192.png) — app/root.tsx references /icons/icon-192.png but file is missing; temporarily point to /favicon.svg and add icons to public/icons; verify with npm run build. (Discovered: 2026-03-18T03:37:56Z UTC) (Resolved: updated app/root.tsx to reference /favicon.svg).
 - [x] Fix CSV export escaping in maintenance.export.tsx (malformed CSV when fields contain commas/quotes)
 - [x] Add safeRedirect to session.server.ts and sanitize redirectTo in login action (prevent open redirect)
 - [x] Make logout POST-only (remove session destroy on GET)

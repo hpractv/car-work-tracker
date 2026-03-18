@@ -340,3 +340,6 @@ Observed that safeRedirect accepts strings starting with '/' but a value like '/
 
 ### 2026-03-18: safeRedirect hardening\n\nAdded reject-for-encoded-slash check and decode-then-validate logic for safeRedirect; added unit tests covering '/%2F%2Fevil.com' and related cases. Tests pass locally. Note: repository has no configured push destination, so changes are committed locally but not pushed.
 ### Consolidated CSV escaping (2026-03-18)\nUsing a single escapeCsvField in app/utils/csv.ts eliminates inconsistent escaping across export routes and handles CR/\nLF/newline quoting. Also: avoid end-of-month date literals in monthsDiff tests (timezone-sensitive); prefer first-of-month or numeric Date(...) constructors for determinism.
+### PWA icon fallback
+
+Using /favicon.svg as a fallback prevents 404s when PNG icon assets are missing, and the VitePWA manifest can reference favicon.svg without breaking. For broader compatibility (iOS home screen and older Android devices), add PNG icons (e.g., 192x192, 512x512) into public/icons and list them in the manifest.
