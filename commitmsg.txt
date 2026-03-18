@@ -1,0 +1,3 @@
+docs: append progress & learnings after verification loop
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
