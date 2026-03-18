@@ -5,6 +5,12 @@ This document accumulates durable learnings across loop iterations.
 
 
 
+## Copilot iteration — session plan & verification (2026-03-18)
+
+Created .ralph/session-plan.md listing prioritized tasks; verified build (`npm run build`) and ran tests in single-run mode (`npm run test -- --run`).
+
+Learning: Vitest defaults to watch mode when invoked via `npm test`; use `npm run test -- --run` or `npm run test:ci` in automation to run once. Add this to .ralph/AGENT.md for CI consistency.
+
 ## Vite Path Alias with vite-plugin-pwa
 
 When using `vite-plugin-pwa` alongside `@remix-run/dev` in Remix v2, the Remix plugin's automatic `~` path alias is NOT picked up by Rollup during the client build, causing:
