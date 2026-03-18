@@ -542,3 +542,8 @@ Notes: entry.client.tsx imports register-sw-client.ts which uses virtual:pwa-reg
 Tasks Attempted: format/csv/safeRedirect/webpush changes
 Tasks Completed: format.ts, csv.ts, session.server.ts, webpush.server.ts, updated tests; build & tests passed
 
+---
+[2026-03-18] Loop: Convert server-only logout route
+Tasks Attempted: convert logout.tsx
+Tasks Completed: converted logout.tsx -> logout.ts
+Build result: npm run build => success

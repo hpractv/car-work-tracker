@@ -371,3 +371,8 @@ Migrated away from static public/registerSW.js to virtual:pwa-register client-on
 ### Webpush & safeRedirect
 Normalized VAPID env vars and re-check decoded redirect targets (double-encoding) to prevent open-redirects. Use vi.resetModules() to test module-level init that reads env vars.
 
+
+
+## Convert server-only routes (2026-03-18)
+
+Converting .tsx -> .ts for server-only routes prevents them from being included in client bundles and avoids empty client chunks. During the build we observed empty chunks for server-only export routes; converting logout.tsx removed those empty chunks.

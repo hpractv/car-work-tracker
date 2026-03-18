@@ -239,3 +239,5 @@ pm test to verify baseline; build and tests succeeded.
   - npm run build ✅, npm test ✅ (all tests passed)
 - Notes: All tests pass locally; updated fix_plan and logs. Temporary note: SESSION_SECRET warning shown in test environment — tests run with default insecure secret; ensure CI provides SESSION_SECRET.
 
+
+Resolved: logout.tsx converted to logout.ts (2026-03-18)
