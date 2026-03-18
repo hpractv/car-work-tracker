@@ -479,3 +479,7 @@ Running 'npm ci' then 'npm run build' then 'npm run test:ci' in a single subagen
 Found that the repository already implements the features listed in .ralph/fix_plan.md and passes build+tests. For future iterations, prefer running 
 pm run build && npm run test:ci before planning new tasks.
 \n## Fast fail CI on missing SESSION_SECRET\nAdding a small preflight check (scripts/check-env.cjs) and calling it in CI prevents builds from proceeding with insecure defaults. Use \NODE_ENV=production\ in CI and ensure SESSION_SECRET is provided as a secret.\n
+
+## 2026-03-18 — Build & test verification
+Ran production build and CI tests; all tests passed (44). Learning: use 'npm run test:ci' to run tests once in automation; ensure SESSION_SECRET is set in CI to avoid insecure default warning.
+
