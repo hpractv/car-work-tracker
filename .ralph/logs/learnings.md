@@ -483,3 +483,7 @@ pm run build && npm run test:ci before planning new tasks.
 ## 2026-03-18 — Build & test verification
 Ran production build and CI tests; all tests passed (44). Learning: use 'npm run test:ci' to run tests once in automation; ensure SESSION_SECRET is set in CI to avoid insecure default warning.
 
+## Build & Tests verification (2026-03-18)
+
+Verified production build and CI tests passed (44 tests). SESSION_SECRET warning appears in dev: ensure CI sets SESSION_SECRET to avoid insecure default.
+
