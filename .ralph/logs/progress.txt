@@ -415,3 +415,22 @@ Tasks Completed: ✅ All 5
 - Updated .ralph/fix_plan.md ✅
 - Ran tests and build: tests passed (10 passed), build succeeded ✅
 
+---
+[2026-03-18] Loop 13 (finalize)
+
+Tasks Attempted:
+- Centralize CSV escaping util and add tests
+- Add requireUserId redirect unit test
+- Migrate SW registration to virtual:pwa-register and import in entry.client.tsx
+- Update AGENT.md quick commands and mark related fix_plan items
+- Verify manifest icons and mark fix_plan items
+
+Tasks Completed: ✅ All 5
+- Created app/utils/csv.ts and tests/csv.test.ts ✅
+- Added tests/session.test.ts for requireUserId redirect ✅
+- Added app/register-sw-client.ts and updated entry.client.tsx & root.tsx ✅
+- Updated .ralph/AGENT.md and .ralph/fix_plan.md ✅
+- Committed changes and created tag 0.0.18 (push skipped: no remote) ✅
+
+Build/test: npm run test:ci => success (10 tests passed); npm run build => success
+

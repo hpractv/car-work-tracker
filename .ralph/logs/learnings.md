@@ -318,3 +318,7 @@ Small, testable utility functions are easier to unit test when extracted into de
 
 Using `virtual:pwa-register` and importing a small client-only module (imported from `entry.client.tsx`) provides a cleaner integration with VitePWA in a Remix app than inserting a static `/registerSW.js` script tag in the server-rendered HTML. This keeps SW registration in client-only code and avoids mismatches between dev/build artifacts.
 
+### Centralize CSV escaping for testability
+
+Extracting CSV escaping into `app/utils/csv.ts` made it easy to unit-test edge cases (commas, quotes, newlines) and reduces duplication across export routes. When exporting CSV from server routes, prefer a shared utility to ensure consistent escaping and simplify future fixes.
+
