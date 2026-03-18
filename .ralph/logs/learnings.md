@@ -499,3 +499,8 @@ Verified repository implements specs; build and tests pass (npm run build; npm r
 Verified production build and CI tests (npm run build; npm run test:ci). No missing functionality detected in this loop.
 Reminder: use 
 pm run test:ci in CI and set SESSION_SECRET in CI to avoid insecure default.
+### Faster build/test loop - 2026-03-18T13:41:17Z
+Running 
+pm run build && npm run test:ci verified the app and service worker. Use 
+pm run test:ci for CI-like deterministic runs.
+
