@@ -1,0 +1,5 @@
+Remove committed prisma dev DB and ensure .gitignore prevents recommit
+
+- Remove tracked prisma dev.db from repository, leave local copy
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
