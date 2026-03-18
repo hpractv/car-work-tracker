@@ -15,9 +15,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const carIds = cars.map((c) => c.id);
 
   if (carIds.length === 0) {
-    return new Response("Date,Car,VIN,Service Type,Mileage,Cost,Vendor,Description,Receipt URL\n", {
+    const header = ["Date", "Car", "VIN", "Service Type", "Mileage", "Cost", "Vendor", "Description", "Receipt URL"].map(escapeCsvField).join(",");
+    const csvContent = `${header}\r\n`;
+    return new Response(csvContent, {
       headers: {
-        "Content-Type": "text/csv",
+        "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="maintenance-history.csv"`,
       },
     });
