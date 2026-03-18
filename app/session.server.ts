@@ -45,7 +45,20 @@ export function safeRedirect(to: unknown, defaultRedirect = "/") {
   if (typeof to !== "string") return defaultRedirect;
   // only allow same-origin paths that start with a single "/"
   if (!to.startsWith("/") || to.startsWith("//")) return defaultRedirect;
-  return to;
+  // reject obvious percent-encoded slash attacks (e.g., '/%2F%2Fevil.com')
+  // and reject any encoded backslashes
+  if (/%2f|%2F|%5c|%5C/.test(String(to))) return defaultRedirect;
+  try {
+    const decoded = decodeURIComponent(String(to));
+    // reject decoded protocol-relative URLs or values that don't start with a single '/'
+    if (!decoded.startsWith("/") || decoded.startsWith("//") || decoded.includes("://")) {
+      return defaultRedirect;
+    }
+    return to;
+  } catch {
+    // malformed percent-encoding
+    return defaultRedirect;
+  }
 }
 
 export async function createUserSession(userId: string, redirectTo: string) {

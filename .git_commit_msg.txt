@@ -1,3 +1,1 @@
-chore: record safeRedirect todo & update logs
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+fix: harden safeRedirect against percent-encoded slashes; add tests\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
