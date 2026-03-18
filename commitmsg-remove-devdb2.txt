@@ -1,0 +1,6 @@
+Remove nested prisma dev DB and update .gitignore
+
+- Add ignore patterns for nested prisma dev DB
+- Remove tracked binary DB files from repo (keep local copy)
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

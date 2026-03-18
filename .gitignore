@@ -4,3 +4,6 @@ build/
 prisma/dev.db
 prisma/dev.db-journal
 *.js.map
+# Ignore nested Prisma dev DB files
+prisma/**/dev.db
+prisma/**/dev.db-journal
