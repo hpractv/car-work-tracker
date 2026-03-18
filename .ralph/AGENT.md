@@ -62,3 +62,6 @@ Dashboard | My Cars | History | Reports | Settings | Profile | Logout
 - Env: Set `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in `.env` for production. If not set, ephemeral keys are generated for development (not persisted).
 - Routes: `/api/push/subscribe`, `/api/push/unsubscribe`, and `/api/push/send-test` handle subscription storage and test sends.
 - Client: The Settings page includes a PushManager component to subscribe/unsubscribe and send a test notification.
+## Recent build notes (2026-03-18)
+- Use `npm run build` to produce the production bundle; VitePWA will emit `build/client/sw.js` which the runtime registration script should reference at `/sw.js`.
+- Ensure `.env` contains: DATABASE_URL, SESSION_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY. The server exposes the public key to clients via loader responses (no need to set VITE_PUBLIC_* unless you prefer a build-time copy).
