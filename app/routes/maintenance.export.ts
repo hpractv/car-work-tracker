@@ -2,6 +2,7 @@ import { type LoaderFunctionArgs } from "@remix-run/node";
 import { requireUserId } from "~/session.server";
 import { getCarsForUser } from "~/models/car.server";
 import { db } from "~/db.server";
+import { escapeCsvField } from "~/utils/csv";
 
 /**
  * GET /maintenance/export?carId=&type=&dateFrom=&dateTo=&search=
@@ -71,14 +72,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     include: { car: { select: { make: true, model: true, year: true, vin: true } } },
   });
 
-  const escapeCsvField = (value: string | number | null | undefined): string => {
-    if (value == null) return "";
-    const s = String(value);
-    if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
-      return `"${s.replace(/"/g, '""')}"`;
-    }
-    return s;
-  };
+
 
   const rows = [
     ["Date", "Car", "VIN", "Service Type", "Mileage", "Cost", "Vendor", "Description", "Receipt URL"].join(","),

@@ -11,12 +11,14 @@ describe('session.server', () => {
   });
 
   it('safeRedirect rejects percent-encoded slash attacks', () => {
-    // encoded protocol-relative URL should be rejected
     expect(safeRedirect('/%2F%2Fevil.com')).toBe('/');
     expect(safeRedirect('/%2f%2Fevil.com')).toBe('/');
-    // encoded backslash variants
     expect(safeRedirect('/path%5Cto')).toBe('/');
-    // well-formed encoded but harmless path should still be allowed if decoding keeps single leading '/'
     expect(safeRedirect('/some%20path')).toBe('/some%20path');
+  });
+
+  it('safeRedirect rejects malformed percent sequences', () => {
+    expect(safeRedirect('/%GG')).toBe('/');
+    expect(safeRedirect('/%2')).toBe('/');
   });
 });

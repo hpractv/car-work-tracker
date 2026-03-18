@@ -8,4 +8,9 @@ describe('utils/date', () => {
     expect(monthsDiff(d1, d2)).toBe(14);
     expect(monthsDiff(d2, d1)).toBe(-14);
   });
+
+  it('monthsDiff edge cases across month boundaries', () => {
+    expect(monthsDiff(new Date('2021-01-01'), new Date('2021-02-01'))).toBe(1);
+    expect(monthsDiff(new Date('2021-02-01'), new Date('2021-02-01'))).toBe(0);
+  });
 });

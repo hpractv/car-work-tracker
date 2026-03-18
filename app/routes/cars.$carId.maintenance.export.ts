@@ -2,15 +2,9 @@ import { type LoaderFunctionArgs } from "@remix-run/node";
 import { requireUserId } from "~/session.server";
 import { getCarById } from "~/models/car.server";
 import { formatMaintenanceType } from "~/utils/format";
+import { escapeCsvField } from "~/utils/csv";
 
-function escapeCsvField(value: string | number | null | undefined): string {
-  if (value == null) return "";
-  const str = String(value);
-  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
+
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

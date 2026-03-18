@@ -469,3 +469,5 @@ Test result: npm run test:ci => success (exit code 0)
 Actions: ran tests (npm run test:ci) => 23 tests passed. Ran npm run build => build succeeded.
 Result: No code changes required; tasks already implemented and checked in .ralph/fix_plan.md.
 2026-03-17 21:02:38Z — Ran discovery & tests: created plan.md; explored format, monthsDiff, session.safeRedirect, webpush; added todo to .ralph/fix_plan.md; vitest --run: 23/23 passed. Next: harden safeRedirect & add tests.
+2026-03-17 21:08:12Z — Implemented safeRedirect hardening and added tests; updated .ralph/fix_plan.md (marked todo done). Ran tests: 24/24 passed. Next: push changes to remote (no remote configured locally).
+[2026-03-18T21:26:00Z] Attempted: CSV escape consolidation and test expansions (format, csv, date, session). Completed: replaced inline escapeCsvField in export routes; added/expanded tests. Result: vitest --run: 28 passed, 0 failed.

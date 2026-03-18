@@ -1,1 +1,0 @@
-fix: harden safeRedirect against percent-encoded slashes; add tests\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

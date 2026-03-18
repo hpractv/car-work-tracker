@@ -5,14 +5,7 @@ import { db } from "~/db.server";
 import { formatMaintenanceType } from "~/utils/format";
 import { escapeCsvField } from "~/utils/csv";
 
-function escapeCsvField(value: string | number | null | undefined): string {
-  if (value == null) return "";
-  const str = String(value);
-  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
+
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

@@ -336,3 +336,7 @@ Ran Vitest (CI) and production build. All tests passed (23). Vite PWA generateSW
 
 Observed that safeRedirect accepts strings starting with '/' but a value like '/%2F%2Fevil.com' decodes to '//evil.com' and could allow open-redirects. Add tests and either reject percent-encoded slashes or decode-and-validate. Also: VAPID keys are generated ephemeral during tests; set VAPID_* env vars in CI. SESSION_SECRET missing warns in dev — ensure CI sets SESSION_SECRET.
 
+
+
+### 2026-03-18: safeRedirect hardening\n\nAdded reject-for-encoded-slash check and decode-then-validate logic for safeRedirect; added unit tests covering '/%2F%2Fevil.com' and related cases. Tests pass locally. Note: repository has no configured push destination, so changes are committed locally but not pushed.
+### Consolidated CSV escaping (2026-03-18)\nUsing a single escapeCsvField in app/utils/csv.ts eliminates inconsistent escaping across export routes and handles CR/\nLF/newline quoting. Also: avoid end-of-month date literals in monthsDiff tests (timezone-sensitive); prefer first-of-month or numeric Date(...) constructors for determinism.
