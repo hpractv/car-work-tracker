@@ -507,3 +507,7 @@ pm run test:ci for CI-like deterministic runs.
 ### Git remote absent - 2026-03-18T13:42:05Z
 In this environment the 'origin' remote is not configured or not accessible. Commits and tag created locally. To publish, set a remote or push from a developer machine with appropriate credentials.
 
+
+### 2026-03-18T07:47:13.9052663-06:00 - Build & Test loop
+Build and tests passed (44 tests). Note: SESSION_SECRET not set in environment causes an insecure-default warning during tests; set for production. Vite may emit empty client chunks for server-only routes; ensure server-only routes are authored as .ts to avoid client bundling. 
+
