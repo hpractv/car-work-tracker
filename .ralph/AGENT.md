@@ -5,6 +5,7 @@
 - **Database Push:** Use `npx prisma db push` to push schema changes to the SQLite database.
 - **Database Seed:** Use `npm run prisma:seed` to seed maintenance types and dev user (dev@example.com / password123).
 - **Build App:** Use `npm run build` to verify the application builds correctly.
+- **Run Tests:** Use `npm run test` for local runs and `npm run test:ci` for CI/headless runs.
 - **Package Manager:** Use `npm` for all dependency management.
 
 **Important Workflows:**
@@ -36,7 +37,7 @@ The `tsconfig.json` has `"noEmit": true` — do NOT remove this. Without it, run
 - Deletes user + all solo-owned cars (cars with other owners are preserved)
 
 **Security Notes:**
-- `SESSION_SECRET` env var must be set before starting the server in production — it will throw at startup if missing
+- `SESSION_SECRET` env var must be set before starting the server in production — session.server.ts will throw at startup if missing; ensure CI sets this var and document in .env.example
 - The edit route for cars (`/cars/:id/edit`) is now owner-only at the loader level (throws 403 for drivers)
 
 **New Routes Added (Loop 9):**

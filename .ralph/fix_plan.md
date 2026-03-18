@@ -166,6 +166,19 @@
 - [x] Add push notification support for maintenance due reminders — subscription storage, server endpoints, client subscribe UI, and test send route implemented
 - [x] Add per-car maintenance interval overrides (CarMaintenanceOverride model)
 
+## Short-term tasks (next)
+- [x] Add unit tests for utils/format.ts (formatMaintenanceType, formatDate, formatCurrency, formatMileage, getMaintenanceCategory) (2026-03-18)
+- [x] Extract monthsDiff to app/utils/date.ts and add tests (2026-03-18)
+- [x] Add unit tests for session.server.safeRedirect (2026-03-18)
+- [x] Add unit tests for webpush.getPublicVapidKey (2026-03-18)
+- [ ] Increase Vitest coverage by adding more unit tests (baseline)
+- [ ] Update .ralph/AGENT.md with concise build/test instructions
+- [ ] Consider replacing registerSW.js with virtual:pwa-register approach for better integration
+- [ ] Improve PWA manifest icons sizes and verify assets
+- [ ] Add tests for session.requireUserId redirect flow (non-authenticated)
+- [ ] Add simple test for CSV export escaping function
+
+
 ## 🔧 Discovered issues (loop)
 - [x] Fix CSV export escaping in maintenance.export.tsx (malformed CSV when fields contain commas/quotes)
 - [x] Add safeRedirect to session.server.ts and sanitize redirectTo in login action (prevent open redirect)

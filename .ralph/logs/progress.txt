@@ -372,3 +372,17 @@ Tasks Completed:
 
 Build result: npm run build => success (exit code 0)
 Test result: npm run test:ci => success (exit code 0)
+---
+[2026-03-18] Loop: Add unit tests & extract monthsDiff
+
+Tasks Attempted:
+- Extract monthsDiff to app/utils/date.ts and update root.tsx to import it
+- Add unit tests for format utilities, monthsDiff, session.safeRedirect, and webpush.getPublicVapidKey
+- Update .ralph/fix_plan.md and .ralph/AGENT.md
+
+Tasks Completed:
+- ✅ Extracted monthsDiff to app/utils/date.ts and updated root.tsx
+- ✅ Added tests in tests/utils.test.ts covering format utils, monthsDiff, safeRedirect, and webpush.getPublicVapidKey
+- ✅ Updated .ralph/fix_plan.md to record short-term tasks and marked completed items
+
+Test result: npm run test:ci => success (all tests passed, exit code 0)

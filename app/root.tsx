@@ -16,6 +16,7 @@ import { json } from "@remix-run/node";
 import { getUserId } from "~/session.server";
 import { db } from "~/db.server";
 import OfflineIndicator from "~/components/OfflineIndicator";
+import { monthsDiff } from "~/utils/date";
 
 export const links: LinksFunction = () => [
   { rel: "manifest", href: "/manifest.webmanifest" },
@@ -23,9 +24,7 @@ export const links: LinksFunction = () => [
   { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
 ];
 
-function monthsDiff(from: Date, to: Date): number {
-  return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
-}
+
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await getUserId(request);
