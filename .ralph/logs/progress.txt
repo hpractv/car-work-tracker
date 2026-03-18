@@ -398,6 +398,20 @@ Tasks Completed:
 - ✅ Added public/registerSW.js
 - ✅ Updated .env.example (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)
 - ✅ npm run build => success (sw.js generated and bundles built)
+
+---
+[2026-03-18] Loop: Prisma fix
+
+Tasks Attempted:
+- Fix runtime Prisma import in app/routes/settings.tsx (prevent @prisma/client bundling into client)
+
+Tasks Completed: ✅ 1
+- Updated app/routes/settings.tsx: changed import to type-only and replaced instanceof check with shape-based error code check; updated .ralph/fix_plan.md and marked issue resolved.
+
+Build result: npm run build ✅ exit code 0
+Git: Committed (commit 49fd4a1c) — push failed: no configured remote (push skipped).
+
+
 ---
 [2026-03-18] Loop: Update fix_plan & run build/tests
 
@@ -616,3 +630,15 @@ Results: build succeeded, tests passed (see CI output).
 Notes: SESSION_SECRET not set in test env — tests used insecure default.
 [2026-03-18T01:27:55Z] Git push attempted but failed: remote 'origin' not available or access denied. Commit was created locally.
 [2026-03-18T01:30:11Z] Git tag '0.0.35' created locally; push to remote failed.
+---
+[2026-03-18T08:03:04Z] Loop: Repo verification
+
+Tasks Attempted:
+- Explore repository; run npm run build and npm run test:ci
+
+Tasks Completed:
+- Build ✅
+- Tests ✅ (42 tests)
+
+Notes:
+- No code changes required this loop; repository stable.

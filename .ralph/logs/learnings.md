@@ -238,6 +238,10 @@ For global history pages with potentially large datasets, server-side Prisma fil
 
 To show a notification badge in the navbar, add the due-count computation directly in the root loader (inline Prisma queries, not imported from server modules). Wrap in try/catch so a DB error never breaks navigation. Initialize `dueCount = 0` and increment it per due type across all cars. Pass it to the NavBar component as a prop and render conditionally with a red pill badge.
 
+## 2026-03-18: Avoid runtime @prisma/client imports in route modules
+
+When a Remix route module imports `@prisma/client` at runtime, Vite can accidentally include Prisma's runtime in the client bundle or cause a build error. Prefer type-only imports to reference Prisma types (e.g., `import type { Prisma } from "@prisma/client";`) or move runtime error handling and Prisma client usage into server-only modules (e.g., `*.server.ts`). This keeps `@prisma/client` confined to server bundles and avoids client-side bundling issues. (Applied: changed app/routes/settings.tsx to use type-only import and shape-based error code check.)
+
 ## Analytics Pages with Pure CSS Bar Charts
 
 For simple analytics visualizations, avoid external charting libraries. Use `<div>` elements with `width: X%` and `background: color` to render horizontal bars. Calculate `width = (value / maxValue) * 100`. For vertical bars, use `height` instead and a flex column-reverse container. This works offline (no CDN), renders SSR, and prints cleanly.
@@ -402,3 +406,7 @@ Observed that tests run without SESSION_SECRET set (insecure default used for lo
 Push to remote failed because 'origin' is not configured in this environment or credentials are missing. Commits were created locally. Ensure CI/agent has git remote & credentials before expecting automated pushes.
 ### 2026-03-18T01:30:11Z — Tagging
 Created local git tag 0.0.35 after successful build/tests. Push to remote failed in this environment; ensure remote configured for automated release tagging.
+## Verified build & tests (2026-03-18)
+
+Verified production build and CI tests passed. Run `npm run build` and `npm run test:ci` before large refactors; server-only CSV export routes should be implemented as .ts loader modules to avoid client bundling (empty client chunks are expected).
+
