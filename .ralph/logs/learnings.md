@@ -434,3 +434,8 @@ Repository verified: build and tests pass. Prioritize CI secrets (SESSION_SECRET
 
 If `includeAssets` in VitePWA references filenames that do not exist in `public/`, the build will still succeed but the manifest may miss those assets and build tooling may emit warnings. Either add the missing files to `public/` (preferred for compatibility) or remove the missing entries from `includeAssets` and rely on `favicon.svg` (or existing PNG icons) in the manifest. Removed `favicon.ico` from `vite.config.ts` and verified `npm run build` + `npm run test:ci` passed.
 
+### 2026-03-18 — Build & Test loop
+Ran production build and CI tests to verify baseline. Key learnings:
+- Use irtual:pwa-register for client SW registration (virtual import present in app/register-sw-client.ts).
+- Harden safeRedirect against percent-encoded slashes and add unit tests (covered in tests/session.server.test.ts).
+- Use itest --run (test:ci) for single-run CI tests; default itest runs watch mode.
