@@ -201,6 +201,11 @@ try {
   throw e; // re-throw unexpected errors
 }
 ```
+
+## 2026-03-18: Baseline build & tests
+
+Created a session plan in the Copilot session state and ran the production build and CI-mode tests. Observed all tests passing (28) and a successful production build. No functional code changes were required in this iteration; repository is currently stable. Next iteration will implement any remaining items from .ralph/fix_plan.md or address regressions if discovered.
+
 ## Batch Prisma Queries for Maintenance Due Calculations
 
 The `getMaintenanceDue(carId, mileage)` function does 2 DB queries per car. When the dashboard loads for a user with N cars, this creates 2N queries just for due-maintenance checks (plus another 2N for approaching). Fix: add `getBatchMaintenanceDue(cars)` that loads all types once and all records for all carIds in one query, then computes results in-memory per car. Reduces from 2N queries to 2 queries. Apply the same pattern to `getBatchMaintenanceApproaching`. Both use a `Map<carId, results[]>` return type for O(1) lookup per car.
