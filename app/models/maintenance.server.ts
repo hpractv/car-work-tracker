@@ -1,4 +1,5 @@
 import { db } from "~/db.server";
+import { monthsDiff } from "~/utils/date";
 
 export async function getMaintenanceRecords(carId: string) {
   return db.maintenanceRecord.findMany({
@@ -92,9 +93,7 @@ export async function deleteMaintenanceType(id: string) {
   return db.maintenanceType.delete({ where: { id } });
 }
 
-function monthsDiff(from: Date, to: Date): number {
-  return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
-}
+
 
 type OverrideEntry = { typeName: string; intervalMiles: number | null; intervalMonths: number | null };
 

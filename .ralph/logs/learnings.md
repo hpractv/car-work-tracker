@@ -329,3 +329,6 @@ When testing server modules that import from `~/db.server`, add the same `~` pat
 ## PWA manifest icons (2026-03-18)
 
 When manifest icons referenced missing PNGs, VitePWA still built but the manifest lacked icons. Using an existing favicon.svg and referencing it in the manifest ensures the app has an icon to display during installs. Prefer client-side registration via virtual:pwa-register for tighter integration and to avoid injecting build artifacts into SSR HTML.
+### 2026-03-18: Baseline green + build notes
+
+Ran Vitest (CI) and production build. All tests passed (23). Vite PWA generateSW produced sw.js; VAPID keys are generated in dev. Empty client chunks for server-only routes are expected when routes are server-only; ensure server-only routes use .ts and avoid client-side exports.

@@ -1,3 +1,14 @@
+Build & test instructions (Windows)
+
+Repository root:
+C:\Users\ROY28095\temp\car-work-tracker
+
+Quick commands:
+- cd C:\Users\ROY28095\temp\car-work-tracker
+- npm install
+- npm run build
+- npm run test (or: npx vitest)
+
 # Agent Instructions
 
 Quick commands:
