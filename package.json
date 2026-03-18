@@ -11,7 +11,8 @@
     "prisma:seed": "node --loader ts-node/esm prisma/seed.ts",
     "typecheck": "tsc",
     "test": "vitest",
-    "test:ci": "vitest --run"
+    "test:ci": "vitest --run",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

@@ -20,7 +20,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "favicon.svg"],
+      includeAssets: ["favicon.ico", "favicon.svg", "icons/icon-192.png", "icons/icon-512.png"],
       manifest: {
         name: "Car Work Tracker",
         short_name: "CarTracker",
@@ -32,9 +32,9 @@ export default defineConfig({
         scope: "/",
         orientation: "any",
         icons: [
-          { src: "/favicon.svg", sizes: "192x192", type: "image/svg+xml", purpose: "any" },
-          { src: "/favicon.svg", sizes: "512x512", type: "image/svg+xml", purpose: "any" },
-          { src: "/favicon.svg", sizes: "512x512", type: "image/svg+xml", purpose: "maskable" },
+          { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
       workbox: {

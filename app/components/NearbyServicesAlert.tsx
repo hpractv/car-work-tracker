@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatMaintenanceType } from "~/utils/format";
 
 function mapsUrl(lat: number, lon: number, name: string): string {
@@ -26,6 +26,7 @@ export default function NearbyServicesAlert({
   const [checked, setChecked] = useState(false);
   const [showList, setShowList] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const listRef = useRef<HTMLUListElement | null>(null);
 
   useEffect(() => {
     if (maintenanceDue.length === 0) return;
@@ -62,6 +63,10 @@ export default function NearbyServicesAlert({
 
     fetchNearby();
   }, [maintenanceDue.length, retryKey]);
+
+  useEffect(() => {
+    if (showList) listRef.current?.focus();
+  }, [showList]);
 
   if (maintenanceDue.length > 0 && loading) {
     return (
@@ -112,7 +117,7 @@ export default function NearbyServicesAlert({
         </button>
       </div>
       {showList && (
-        <ul id="nearby-services-list" style={{ margin: 0, padding: 0, listStyle: "none", width: "100%", borderTop: "1px solid #f59e0b", paddingTop: "0.5rem" }} aria-hidden={!showList}>
+        <ul id="nearby-services-list" ref={listRef} tabIndex={-1} style={{ margin: 0, padding: 0, listStyle: "none", width: "100%", borderTop: "1px solid #f59e0b", paddingTop: "0.5rem" }} aria-hidden={!showList}>
           {displayServices.map((s, i) => (
             <li key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.2rem 0", fontSize: "0.85rem" }}>
               <span>{i + 1}. {s.name}</span>

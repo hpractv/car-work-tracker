@@ -300,6 +300,32 @@ Tasks Completed:
 - Appended progress & learnings logs ✅
 
 ---
+[2026-03-18] Loop: Implemented PWA & infra improvements
+
+Tasks Attempted:
+- Update PWA manifest icons + include assets (vite.config.ts)
+- Return ephemeral VAPID key in dev while skipping generation in tests (app/utils/webpush.server.ts)
+- Add basic security headers / CSP in root.tsx
+- Add CSV filename sanitizer (app/utils/csv.ts)
+- Improve NearbyServicesAlert keyboard accessibility (app/components/NearbyServicesAlert.tsx)
+- Create server-side validators utility file (app/utils/validators.ts)
+- Add Vitest coverage config + test:coverage script (vitest.config.ts, package.json)
+
+Tasks Completed:
+- Updated vite.config.ts manifest icons and includeAssets ✅
+- Added ephemeral VAPID handling with test guard ✅
+- Added headers export with CSP in root.tsx ✅
+- Added sanitizeFilename to CSV utils ✅
+- Improved NearbyServicesAlert focus behavior (ref + tabIndex) ✅
+- Created validators.ts (ready for integration) ✅
+- Updated vitest.config.ts and package.json with coverage script ✅
+
+Build & Tests:
+- npm run build ✅ (production build succeeded)
+- npm run test:ci ✅ (28 tests passed)
+
+
+---
 [2026-03-18] Loop 1
 
 Tasks Attempted:

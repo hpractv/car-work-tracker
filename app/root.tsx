@@ -24,6 +24,15 @@ export const links: LinksFunction = () => [
   { rel: "apple-touch-icon", href: "/favicon.svg" },
 ];
 
+export const headers = () => {
+  return {
+    "Content-Security-Policy": "default-src 'self'; img-src 'self' data: https:; connect-src 'self' https://overpass-api.de; script-src 'self'; style-src 'self' 'unsafe-inline';",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer-when-downgrade",
+  };
+};
+
 
 
 export async function loader({ request }: LoaderFunctionArgs) {

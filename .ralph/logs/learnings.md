@@ -355,4 +355,11 @@ pm run build and
 pm test both succeeded.
 - Dev warnings: SESSION_SECRET not set triggers a benign console warning; set in CI.
 - VAPID: ephemeral VAPID keys generated during tests — set env vars in CI for stability.
+
+### 2026-03-18: PWA & Webpush improvements
+- Generate ephemeral VAPID keys in development but skip generation in test environment to keep unit tests deterministic; expose a getter that reads env var first.
+- Add sanitizeFilename utility to ensure CSV download filenames are safe (remove quotes/slashes/control chars) and consistent across exports.
+- Add a basic Content-Security-Policy and security headers export in root.tsx to harden the app against common web attacks.
+- Improve NearbyServicesAlert keyboard accessibility: programmatically focus the expanded list using a ref and add tabIndex=-1 so keyboard users can navigate the list immediately.
+
 - Empty client chunks for server-only routes are harmless (Vite emits small stub files). Using .ts for server-only routes reduces client bundle size, though empty stubs may still be produced.
