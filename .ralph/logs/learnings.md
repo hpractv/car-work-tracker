@@ -504,3 +504,6 @@ Running
 pm run build && npm run test:ci verified the app and service worker. Use 
 pm run test:ci for CI-like deterministic runs.
 
+### Git remote absent - 2026-03-18T13:42:05Z
+In this environment the 'origin' remote is not configured or not accessible. Commits and tag created locally. To publish, set a remote or push from a developer machine with appropriate credentials.
+
