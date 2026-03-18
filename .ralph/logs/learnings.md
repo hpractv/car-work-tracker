@@ -363,3 +363,7 @@ pm test both succeeded.
 - Improve NearbyServicesAlert keyboard accessibility: programmatically focus the expanded list using a ref and add tabIndex=-1 so keyboard users can navigate the list immediately.
 
 - Empty client chunks for server-only routes are harmless (Vite emits small stub files). Using .ts for server-only routes reduces client bundle size, though empty stubs may still be produced.
+
+### Virtual PWA register integration
+Migrated away from static public/registerSW.js to virtual:pwa-register client-only registration imported from entry.client.tsx. This keeps SW registration out of SSR HTML and avoids stale static scripts.
+

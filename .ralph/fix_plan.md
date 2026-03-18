@@ -225,3 +225,5 @@ pm test to verify baseline; build and tests succeeded.
 - Tasks Completed: created session plan in session-state (not committed) ✅, npm run build ✅, npm run test:ci ✅ (28 tests)
 - Notes: Most high-priority items from .ralph/fix_plan.md were already implemented; no code changes required this loop. Next loop will implement any remaining items or address regressions.
 
+
+- [x] Removed public/registerSW.js; standardized on virtual:pwa-register client registration (entry.client.tsx import) (2026-03-18T04:37:14Z)

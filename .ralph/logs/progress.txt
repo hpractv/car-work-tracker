@@ -527,3 +527,8 @@ Tasks Completed:
 
 Notes:
 - Warnings: SESSION_SECRET not set in dev (console warning); ephemeral VAPID keys generated and logged during test runs. Empty client chunks for server-only export routes are expected.
+
+2026-03-18T04:37:14Z - Tasks Attempted: remove static SW fallback & standardize registration.
+Tasks Completed: removed public/registerSW.js; updated .ralph/fix_plan.md.
+Notes: entry.client.tsx imports register-sw-client.ts which uses virtual:pwa-register.
+
