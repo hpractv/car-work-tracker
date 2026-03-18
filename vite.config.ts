@@ -20,7 +20,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "favicon.svg", "icons/icon-192.png", "icons/icon-512.png"],
+      includeAssets: ["favicon.svg", "icons/icon-192.png", "icons/icon-512.png"],
       manifest: {
         name: "Car Work Tracker",
         short_name: "CarTracker",

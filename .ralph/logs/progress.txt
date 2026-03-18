@@ -686,6 +686,22 @@ Notes:
 ---
 [2026-03-18T09:32:23Z] Loop: Verify specs & run build/tests
 
+[2026-03-18T09:53:49Z] Loop: Config tweak
+
+Tasks Attempted:
+- Search repo for TODOs, inspect PWA config, update vite.config.ts to remove favicon.ico from includeAssets
+- Run npm run build and npm run test:ci to verify change
+
+Tasks Completed:
+- Edited vite.config.ts to remove favicon.ico from includeAssets ✅
+- npm run build ✅
+- npm run test:ci ✅ (44 tests)
+- Updated .ralph/fix_plan.md to record the config tweak ✅
+
+Notes:
+- Removing the missing favicon.ico prevents build warnings; the app still references /favicon.svg in the manifest and root links.
+
+
 Tasks Attempted:
 - Read .ralph/specs/* and .ralph/fix_plan.md; run repository scan
 - Run npm run build and npm run test:ci

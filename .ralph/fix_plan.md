@@ -262,6 +262,12 @@ Tasks Attempted:
 
 Tasks Completed:
 - Verified npm run build ✅
+
+## Iteration 2026-03-18 - Config Tweak
+
+- Tasks Attempted: remove favicon.ico from includeAssets in vite.config.ts
+- Tasks Completed: removed favicon.ico from includeAssets in vite.config.ts ✅; npm run build ✅; npm run test:ci ✅ (44 tests)
+
 - Verified npm test ✅
 - Created session plan (session-state/plan.md) ✅
 - Updated .ralph/AGENT.md with concise build/test instructions ✅

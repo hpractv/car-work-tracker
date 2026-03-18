@@ -427,3 +427,8 @@ pm run test:ci (vitest --run) for CI automation and single-run test execution to
 ### 2026-03-18 - Verification learning
 
 Repository verified: build and tests pass. Prioritize CI secrets (SESSION_SECRET), coverage, and PWA icon assets. Created session plan at session-state/plan.md.
+
+### 2026-03-18: VitePWA includeAssets caution
+
+If `includeAssets` in VitePWA references filenames that do not exist in `public/`, the build will still succeed but the manifest may miss those assets and build tooling may emit warnings. Either add the missing files to `public/` (preferred for compatibility) or remove the missing entries from `includeAssets` and rely on `favicon.svg` (or existing PNG icons) in the manifest. Removed `favicon.ico` from `vite.config.ts` and verified `npm run build` + `npm run test:ci` passed.
+
