@@ -211,3 +211,4 @@
 ## Iteration 1 - 2026-03-18
 - Verified test suite (23 tests) and production build passed.
 - Selected top-10 tasks (session plan created). No changes required; tasks already implemented.
+\n- [x] Consolidated CSV escaping across export routes and added tests (cars..maintenance.export.ts, cars..fuel.export.ts, maintenance.export.ts, cars.export.ts)
