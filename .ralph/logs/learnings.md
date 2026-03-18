@@ -469,3 +469,8 @@ Created local tag 0.0.50 but pushing failed because no remote repo (origin) is c
 ## 2026-03-18 — Build/test loop optimization
 
 Running 'npm ci' then 'npm run build' then 'npm run test:ci' in a single subagent gives fast feedback; ensure CI provides SESSION_SECRET and DATABASE_URL. Use scripts/check-no-dev-db.js in CI to avoid committed dev.db.
+### 2026-03-18 — Build & test loop improvements
+
+- Use `npm run test:ci` for single-run vitest; prefer in CI to avoid interactive watch.
+- Use `npm run build` to verify production artifacts; vite-plugin-pwa generates SW and pre-cache.
+- register-sw-client.ts uses virtual:pwa-register; ephemeral VAPID keys are generated in dev when env missing.
