@@ -378,3 +378,10 @@ Normalized VAPID env vars and re-check decoded redirect targets (double-encoding
 Converting .tsx -> .ts for server-only routes prevents them from being included in client bundles and avoids empty client chunks. During the build we observed empty chunks for server-only export routes; converting logout.tsx removed those empty chunks.
 ### PWA icons & VAPID env (2026-03-18)
 Adding a favicon.svg entry to the web app manifest provides a vector icon alternative; keep PNG sizes for broad compatibility. Standardized the VAPID env doc to VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY and optional VITE_PUBLIC_VAPID_KEY for client exposure.
+## Build & Test loop — 2026-03-18
+
+Verified that the Remix PWA builds and tests pass locally (npm run build, npm test). Key learnings:
+- Use virtual:pwa-register in entry.client.tsx to avoid committing registerSW.js to public/.
+- Ensure SESSION_SECRET and DATABASE_URL are provided in CI to avoid warnings.
+- Centralize CSV escaping and filename sanitization for all export routes to avoid malformed CSVs.
+

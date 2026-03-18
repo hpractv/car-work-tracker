@@ -249,3 +249,16 @@ Resolved: logout.tsx converted to logout.ts (2026-03-18)
 - [x] Added a small npm script and helper to detect committed prisma dev.db (scripts/check-no-dev-db.js) and package.json script check:no-dev-db.
 - [x] Added GitHub Actions CI workflow (.github/workflows/ci.yml) to run build, tests and check:no-dev-db.
 
+
+---
+[2026-03-18] Iteration: Verified build & tests, selected top-10 tasks. Plan added to session-state/plan.md.
+
+Tasks Attempted:
+- Explore .ralph/specs/*, search codebase for TODOs/unimplemented code, run npm run build and npm test.
+
+Tasks Completed:
+- Verified npm run build ✅
+- Verified npm test ✅
+- Created session plan (session-state/plan.md) ✅
+- Updated .ralph/AGENT.md with concise build/test instructions ✅
+
