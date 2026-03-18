@@ -206,6 +206,10 @@ try {
 
 Created a session plan in the Copilot session state and ran the production build and CI-mode tests. Observed all tests passing (28) and a successful production build. No functional code changes were required in this iteration; repository is currently stable. Next iteration will implement any remaining items from .ralph/fix_plan.md or address regressions if discovered.
 
+## 2026-03-18: Test/CI learning
+
+Vitest defaults to watch mode in dev; use `vitest --run` (npm run test:ci) in CI to run tests once and exit. In automation avoid `npm test` (watch) because the process will wait for changes. The production build may generate empty client chunks for server-only export routes (this is expected and harmless). Ensure SESSION_SECRET is set in CI/prod to avoid fallback to an insecure default and suppress warnings.
+
 ## 2026-03-18: Git remote missing
 
 Observed `git push` failing with "origin does not appear to be a git repository" in the local environment. When automating commits or tagging, verify the remote repository and credentials are configured in the environment (CI tokens / SSH keys). If push fails, create tags locally and document the tag so it can be pushed from a machine with access.
