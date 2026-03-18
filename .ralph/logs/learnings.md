@@ -396,3 +396,5 @@ Verified that the Remix PWA builds and tests pass locally (npm run build, npm te
 - Ensure SESSION_SECRET and DATABASE_URL are provided in CI to avoid warnings.
 - Centralize CSV escaping and filename sanitization for all export routes to avoid malformed CSVs.
 
+### 2026-03-18T01:27:10Z — Build & Test loop
+Observed that tests run without SESSION_SECRET set (insecure default used for local tests). Ensure CI provides SESSION_SECRET to mirror production; web-push generates ephemeral VAPID keys in dev when env vars missing, and getPublicVapidKey returns null in test env for deterministic tests.
