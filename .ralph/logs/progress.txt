@@ -317,3 +317,17 @@ Tasks Completed: ✅
 Build/test notes: build succeeded after schema and component changes; generated service worker and client bundles.
 
 ---
+---
+[2026-03-18] Loop 12
+
+Tasks Attempted:
+- Add Vitest test infra and basic test
+- Create .env.example and .ralph/specs/app_spec.md
+
+Tasks Completed: ✅
+- [x] Add test suite & Vitest configuration — vitest.config.ts, tests/ scaffold (1 passing test)
+- [x] Add .env.example — created
+- [x] Add .ralph/specs/app_spec.md — created
+
+Test result: npm run test => 1 passed, exit code 0
+---

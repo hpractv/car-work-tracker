@@ -306,3 +306,5 @@ Added image and /api runtimeCaching rules to vite.config.ts to improve offline U
 ## Push Notifications: server & keys
 
 Added Web Push support: server stores push subscriptions and can send test notifications via `web-push`. For production, set `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in `.env`. If keys are absent in development, ephemeral keys are generated (not persisted) and the generated public key is logged to the server console for quick manual testing.
+### Vitest: jsdom dependency
+Vitest with environment "jsdom" may prompt to install jsdom when the package is not declared. Add jsdom to devDependencies to avoid interactive prompts in CI. Run `npm install --save-dev jsdom` to ensure non-interactive installs in CI.

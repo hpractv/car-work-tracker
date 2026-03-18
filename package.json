@@ -9,7 +9,9 @@
     "start": "remix-serve ./build/server/index.js",
     "prisma:push": "prisma db push",
     "prisma:seed": "node --loader ts-node/esm prisma/seed.ts",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "test": "vitest",
+    "test:ci": "vitest --run"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -29,13 +31,17 @@
   },
   "devDependencies": {
     "@remix-run/dev": "^2.15.2",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^14.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "jsdom": "^21.1.2",
     "prisma": "^5.22.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5",
     "vite": "^5.4.14",
-    "vite-plugin-pwa": "^0.21.1"
+    "vite-plugin-pwa": "^0.21.1",
+    "vitest": "^1.0.0"
   }
 }

@@ -1,0 +1,7 @@
+Add Vitest tests, .env.example, specs; update fix_plan and logs
+
+- Add vitest.config.ts and tests/example.test.ts
+- Create .env.example and .ralph/specs/app_spec.md
+- Marked these items completed in .ralph/fix_plan.md
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
