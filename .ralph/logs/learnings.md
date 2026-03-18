@@ -462,3 +462,10 @@ Repository already satisfies .ralph/specs and .ralph/fix_plan.md. Verified produ
 ### Using .cjs for helper scripts
 
 Scripts created as .cjs to avoid ESM `require` issues when package.json sets "type":"module". Use .cjs for quick Node helpers.
+### Git remote & tagging
+
+Created local tag 0.0.50 but pushing failed because no remote repo (origin) is configured in this environment. Add `git remote add origin <url>` and push with credentials in CI.
+
+## 2026-03-18 — Build/test loop optimization
+
+Running 'npm ci' then 'npm run build' then 'npm run test:ci' in a single subagent gives fast feedback; ensure CI provides SESSION_SECRET and DATABASE_URL. Use scripts/check-no-dev-db.js in CI to avoid committed dev.db.
