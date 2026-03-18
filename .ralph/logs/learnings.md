@@ -410,3 +410,8 @@ Created local git tag 0.0.35 after successful build/tests. Push to remote failed
 
 Verified production build and CI tests passed. Run `npm run build` and `npm run test:ci` before large refactors; server-only CSV export routes should be implemented as .ts loader modules to avoid client bundling (empty client chunks are expected).
 
+### 2026-03-18: Vitest CI vs watch mode
+
+Note: `npm test` invokes `vitest` in watch/dev mode by default, which keeps a process running and is unsuitable for CI automation. For non-interactive runs use `npm run test:ci` (which runs `vitest --run`) so tests execute once and exit with an appropriate exit code. This prevents lingering watch processes during automation and avoids needing to stop/kill the runner mid-script. Update AGENT.md and CI docs to recommend `npm run test:ci` for automated checks.
+
+
