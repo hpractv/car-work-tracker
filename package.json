@@ -9,11 +9,16 @@
     "start": "remix-serve ./build/server/index.js",
     "prisma:push": "prisma db push",
     "prisma:seed": "node --loader ts-node/esm prisma/seed.ts",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
     "typecheck": "tsc",
     "test": "vitest",
     "test:ci": "vitest --run",
     "test:coverage": "vitest --coverage",
-    "check:no-dev-db": "node ./scripts/check-no-dev-db.js"
+    "test:ci:coverage": "vitest --run --coverage",
+    "test:e2e": "node ./scripts/e2e-smoke.cjs",
+    "check:no-dev-db": "node ./scripts/check-no-dev-db.js",
+    "ci": "npm run check:no-dev-db && npm run typecheck && npm run build && npm run test:ci"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

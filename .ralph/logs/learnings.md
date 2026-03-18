@@ -459,3 +459,6 @@ Using vite-plugin-pwa with Workbox generateSW works well; ensure manifest icons 
 
 Repository already satisfies .ralph/specs and .ralph/fix_plan.md. Verified production build and tests; prefer using `npm run test:ci` for one-shot runs in automation and `npm run build` to confirm PWA artifacts.
 
+### Using .cjs for helper scripts
+
+Scripts created as .cjs to avoid ESM `require` issues when package.json sets "type":"module". Use .cjs for quick Node helpers.

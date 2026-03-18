@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      # For local dev using sqlite file in the repo
+      DATABASE_URL: "file:./prisma/dev.db"
+    volumes:
+      - ./:/app
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000', ()=>console.log('ok'))\" || exit 1"]
+    command: ["npm", "run", "dev"]
