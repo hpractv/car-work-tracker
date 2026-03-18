@@ -416,6 +416,8 @@ Verified production build and CI tests passed. Run `npm run build` and `npm run 
 
 ### 2026-03-18: Vitest CI vs watch mode
 
+Note: Running `npm test` via the shell tool enters Vitest watch mode and keeps the process alive. For automated or CI runs, use `npm run test:ci` (which runs `vitest --run`) to execute tests once and exit. In this environment, use `stop_powershell` to terminate a lingering watch process started by the shell tool.
+
 Note: `npm test` invokes `vitest` in watch/dev mode by default, which keeps a process running and is unsuitable for CI automation. For non-interactive runs use `npm run test:ci` (which runs `vitest --run`) so tests execute once and exit with an appropriate exit code. This prevents lingering watch processes during automation and avoids needing to stop/kill the runner mid-script. Update AGENT.md and CI docs to recommend `npm run test:ci` for automated checks.
 
 
