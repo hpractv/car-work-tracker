@@ -326,3 +326,6 @@ Extracting CSV escaping into `app/utils/csv.ts` made it easy to unit-test edge c
 
 When testing server modules that import from `~/db.server`, add the same `~` path alias to `vitest.config.ts` so Vite transforms can resolve imports during tests. Use `vi.mock('~/db.server', () => ({ db: { maintenanceType: { findMany: vi.fn() }, maintenanceRecord: { findMany: vi.fn() }, carMaintenanceOverride: { findMany: vi.fn() } } }))` or, better, create the mocks inside the factory and then `import { db } from '~/db.server'` in the test to set `db.maintenanceType.findMany.mockResolvedValue(...)`. Also freeze time for deterministic date math using `vi.setSystemTime()` for tests that rely on current date.
 
+## PWA manifest icons (2026-03-18)
+
+When manifest icons referenced missing PNGs, VitePWA still built but the manifest lacked icons. Using an existing favicon.svg and referencing it in the manifest ensures the app has an icon to display during installs. Prefer client-side registration via virtual:pwa-register for tighter integration and to avoid injecting build artifacts into SSR HTML.

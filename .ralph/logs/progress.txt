@@ -448,3 +448,20 @@ Files changed: tests/maintenance.server.test.ts, vitest.config.ts
 
 Git: Committed changes locally and attempted push (push may be skipped if no remote configured)
 
+---
+[2026-03-18] Loop 14
+
+Tasks Attempted:
+- Update PWA manifest icons to reference existing favicon.svg
+- Consider migrating to @vite-pwa/remix (evaluation)
+- Update AGENT.md with CI testing recommendation (use npm run test:ci)
+- Run build and tests
+
+Tasks Completed: ✅ All 4
+- Updated vite.config.ts to include favicon.svg in includeAssets and manifest icons ✅
+- Marked migration consideration in .ralph/fix_plan.md ✅
+- Updated .ralph/AGENT.md with CI test recommendation ✅
+- Ran npm run build and npm run test:ci — both succeeded ✅
+
+Build result: npm run build => success (exit code 0)
+Test result: npm run test:ci => success (exit code 0)

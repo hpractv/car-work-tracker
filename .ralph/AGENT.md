@@ -74,3 +74,5 @@ Dashboard | My Cars | History | Reports | Settings | Profile | Logout
 ## Recent build notes (2026-03-18)
 - Use `npm run build` to produce the production bundle; VitePWA will emit `build/client/sw.js` which the runtime registration script should reference at `/sw.js`.
 - Ensure `.env` contains: DATABASE_URL, SESSION_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY. The server exposes the public key to clients via loader responses (no need to set VITE_PUBLIC_* unless you prefer a build-time copy).
+# Agent note
+- CI: prefer `npm run test:ci` (headless) instead of `npm run test` (watch mode) to avoid interactive watch blocking.

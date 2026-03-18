@@ -162,7 +162,7 @@
 - [x] Add receipt URL links to global maintenance history page (/maintenance)
 
 ## 📋 Future Improvements
-- [ ] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration
+- [x] Consider migrating from `vite-plugin-pwa` to `@vite-pwa/remix` for better Remix integration (considered; deferred - keeping vite-plugin-pwa + virtual:pwa-register for now)
 - [x] Add push notification support for maintenance due reminders — subscription storage, server endpoints, client subscribe UI, and test send route implemented
 - [x] Add per-car maintenance interval overrides (CarMaintenanceOverride model)
 
