@@ -455,3 +455,7 @@ Ran production build and CI tests to verify baseline. Key learnings:
 
 Using vite-plugin-pwa with Workbox generateSW works well; ensure manifest icons live under public/icons to avoid build warnings. Prefer virtual:pwa-register for client SW registration (entry.client.tsx) instead of a static public/registerSW.js. For web-push, trim env vars and treat empty strings as unset; avoid generating ephemeral keys during tests to keep deterministic behavior.
 
+## Session verification (2026-03-18T11:56:00Z)
+
+Repository already satisfies .ralph/specs and .ralph/fix_plan.md. Verified production build and tests; prefer using `npm run test:ci` for one-shot runs in automation and `npm run build` to confirm PWA artifacts.
+
