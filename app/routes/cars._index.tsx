@@ -4,7 +4,7 @@ import { useLoaderData, Link, useRouteError, isRouteErrorResponse } from "@remix
 import { requireUserId } from "~/session.server";
 import { getCarsForUser } from "~/models/car.server";
 import { getBatchMaintenanceDue, getBatchMaintenanceHealthScores } from "~/models/maintenance.server";
-import { db } from "~/db.server";
+// server import moved into loader to avoid client bundling
 import CarCard from "~/components/CarCard";
 import { formatCurrency } from "~/utils/format";
 
@@ -14,6 +14,7 @@ export function meta() {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
+  const { db } = await import('~/db.server');
   const allCars = await getCarsForUser(userId, true);
   const activeCars = allCars.filter(c => !c.isArchived);
   const archivedCars = allCars.filter(c => c.isArchived);

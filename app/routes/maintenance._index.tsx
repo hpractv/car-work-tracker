@@ -3,7 +3,7 @@ import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Link, useRouteError, isRouteErrorResponse, Form, useSearchParams } from "@remix-run/react";
 import { requireUserId } from "~/session.server";
 import { getCarsForUser } from "~/models/car.server";
-import { db } from "~/db.server";
+// server import moved into loader to avoid client bundling
 import { formatMaintenanceType, formatDate, formatCurrency, formatMileage } from "~/utils/format";
 
 export function meta() {
@@ -14,6 +14,7 @@ const PAGE_SIZE = 25;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
+  const { db } = await import('~/db.server');
   const cars = await getCarsForUser(userId);
   const carIds = cars.map((c) => c.id);
 

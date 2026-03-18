@@ -398,6 +398,25 @@ Tasks Completed: ✅
 - Updated .ralph/fix_plan.md to mark dev DB removal done
 
 Git: commits created locally; push failed (no remote configured)
+
+---
+[2026-03-18T11:20:22Z] Loop: Implement fixes & verify
+
+Tasks Attempted:
+- Sanitize CSV filenames in export routes (cars.export.ts, cars.$carId.fuel.export.ts, cars.$carId.maintenance.export.ts)
+- Harden login loader redirectTo (app/routes/login.tsx)
+- Move db imports into loaders for cars._index.tsx, maintenance._index.tsx, _index.tsx
+- Run npm run build & npm run test:ci
+
+Tasks Completed:
+- Sanitized CSV filenames using sanitizeFilename ✅
+- Hardened login loader redirectTo ✅
+- Moved db imports into loaders for key routes ✅
+- npm run build ✅
+- npm run test:ci ✅ (all tests passed)
+
+Notes: Build and tests succeeded. SESSION_SECRET warning persists in dev; ensure CI provides SESSION_SECRET.
+---
 Pending: Ensure SESSION_SECRET is set in production; rotate any leaked DB data if required
 ---
 [2026-03-18] Loop: PWA/Env fixes

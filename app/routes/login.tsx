@@ -12,7 +12,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await getUserId(request);
   if (userId) return redirect("/");
   const url = new URL(request.url);
-  const redirectTo = url.searchParams.get("redirectTo") ?? "/";
+  const redirectTo = safeRedirect(url.searchParams.get("redirectTo") ?? "/");
   return json({ redirectTo });
 }
 

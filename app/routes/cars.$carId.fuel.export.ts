@@ -1,7 +1,7 @@
 import { type LoaderFunctionArgs } from "@remix-run/node";
 import { requireUserId } from "~/session.server";
 import { getCarById, getFuelLogs } from "~/models/car.server";
-import { escapeCsvField } from "~/utils/csv";
+import { escapeCsvField, sanitizeFilename } from "~/utils/csv";
 
 
 
@@ -28,9 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ...rows.map((row) => row.join(",")),
   ].join("\r\n");
 
-  const filename = `${car.year}-${car.make}-${car.model}-fuel-log.csv`
-    .replace(/\s+/g, "-")
-    .toLowerCase();
+  const filename = sanitizeFilename(`${car.year}-${car.make}-${car.model}-fuel-log.csv`);
 
   return new Response(csvContent, {
     status: 200,

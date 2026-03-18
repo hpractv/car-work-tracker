@@ -247,6 +247,11 @@ pm test to verify baseline; build and tests succeeded.
 Resolved: logout.tsx converted to logout.ts (2026-03-18)
 ## Iteration 2026-03-18 - Changes
 
+- [x] Sanitized CSV filenames in export routes: cars.export.ts, cars.$carId.fuel.export.ts, cars.$carId.maintenance.export.ts (Completed: 2026-03-18T11:20:22Z)
+- [x] Hardened login loader redirectTo (app/routes/login.tsx) — sanitize before returning to client (Completed: 2026-03-18T11:20:22Z)
+- [x] Moved server db imports into loaders for key routes to avoid client bundling (cars._index.tsx, maintenance._index.tsx, _index.tsx) (Completed: 2026-03-18T11:20:22Z)
+
+
 - [x] Converted server-only route logout.tsx -> logout.ts to avoid client bundling (resolved).
 - [x] Added favicon.svg to PWA manifest icons in vite.config.ts.
 - [x] Clarified VAPID env var documentation (.env.example) and added VITE_PUBLIC_VAPID_KEY guidance.

@@ -3,7 +3,7 @@ import { requireUserId } from "~/session.server";
 import { getCarsForUser } from "~/models/car.server";
 import { db } from "~/db.server";
 import { formatMaintenanceType } from "~/utils/format";
-import { escapeCsvField } from "~/utils/csv";
+import { escapeCsvField, sanitizeFilename } from "~/utils/csv";
 
 
 
@@ -51,7 +51,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ].join("\r\n");
 
   const now = new Date().toISOString().split("T")[0];
-  const filename = `fleet-maintenance-${now}.csv`;
+  const filename = sanitizeFilename(`fleet-maintenance-${now}.csv`);
 
   return new Response(csvContent, {
     status: 200,

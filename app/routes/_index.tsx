@@ -4,7 +4,7 @@ import { requireUserId } from "~/session.server";
 import { getCarsForUser, getExpiringDocuments, getExpiredDocuments } from "~/models/car.server";
 import { getBatchMaintenanceDue, getBatchMaintenanceApproaching, getBatchMaintenanceHealthScores } from "~/models/maintenance.server";
 import { getUserById } from "~/models/user.server";
-import { db } from "~/db.server";
+// server import moved into loader to avoid client bundling
 import { formatMaintenanceType, formatDate } from "~/utils/format";
 import CarCard from "~/components/CarCard";
 import NearbyServicesAlert from "~/components/NearbyServicesAlert";
@@ -12,6 +12,7 @@ import InstallPrompt from "~/components/InstallPrompt";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
+  const { db } = await import('~/db.server');
   const user = await getUserById(userId);
   const cars = await getCarsForUser(userId);
 

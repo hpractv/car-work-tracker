@@ -447,5 +447,11 @@ Ran production build and CI tests to verify baseline. Key learnings:
 - Use itest --run (test:ci) for single-run CI tests; default itest runs watch mode.
 
 ## Build & PWA learnings (2026-03-18T11:12:12Z)
+
+### 2026-03-18T11:20:22Z — CSV & bundling fixes
+- Use sanitizeFilename from app/utils/csv.ts for all CSV Content-Disposition filenames to avoid unsafe characters and ensure consistent names across exports.
+- Move server-only imports (~/db.server) into loaders via dynamic import to prevent server runtime leakage into client bundles. Dynamic imports may produce empty client chunks — expected and harmless.
+- Always use safeRedirect before returning redirectTo values to clients to prevent open-redirect attack surfaces.
+
 Using vite-plugin-pwa with Workbox generateSW works well; ensure manifest icons live under public/icons to avoid build warnings. Prefer virtual:pwa-register for client SW registration (entry.client.tsx) instead of a static public/registerSW.js. For web-push, trim env vars and treat empty strings as unset; avoid generating ephemeral keys during tests to keep deterministic behavior.
 
