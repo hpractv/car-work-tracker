@@ -21,6 +21,7 @@ Notes:
 
 CI:
 - Use npm run test:ci to run tests in CI (headless).
+- Run npm run check:no-dev-db to detect accidentally committed prisma dev DB files before merging.
 
 That's it — minimal steps to build and test the project.
 
