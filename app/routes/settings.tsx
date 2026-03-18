@@ -1,7 +1,7 @@
 import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useActionData, useNavigation, Link, Form } from "@remix-run/react";
 import React, { useState, useEffect } from "react";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { requireUserId } from "~/session.server";
 import {
   getMaintenanceTypes,
@@ -61,7 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
     try {
       await createMaintenanceType({ name, defaultIntervalMiles, defaultIntervalMonths });
     } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      if ((e as any)?.code === "P2002") {
         return json({ error: `A maintenance type named "${name}" already exists` }, { status: 409 });
       }
       throw e;

@@ -193,6 +193,8 @@
 - [x] Convert server-only export routes (.tsx -> .ts) to avoid client bundling of server-only loaders
 - [x] Add accessibility improvements to NearbyServicesAlert, OfflineIndicator, AlertBanner, CarCard
 
+- [x] Fix runtime Prisma import in app/routes/settings.tsx — file imports Prisma at runtime causing client bundling issues; changed to type-only import and replaced instanceof checks with shape-based checks. (Discovered: 2026-03-18T07:30:48Z UTC) (Resolved: 2026-03-18T07:31:30Z UTC)
+
 
 ## Discovered Issues - Loop 12
 

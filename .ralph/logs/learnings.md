@@ -398,3 +398,7 @@ Verified that the Remix PWA builds and tests pass locally (npm run build, npm te
 
 ### 2026-03-18T01:27:10Z — Build & Test loop
 Observed that tests run without SESSION_SECRET set (insecure default used for local tests). Ensure CI provides SESSION_SECRET to mirror production; web-push generates ephemeral VAPID keys in dev when env vars missing, and getPublicVapidKey returns null in test env for deterministic tests.
+### 2026-03-18T01:27:55Z — Git push environment
+Push to remote failed because 'origin' is not configured in this environment or credentials are missing. Commits were created locally. Ensure CI/agent has git remote & credentials before expecting automated pushes.
+### 2026-03-18T01:30:11Z — Tagging
+Created local git tag 0.0.35 after successful build/tests. Push to remote failed in this environment; ensure remote configured for automated release tagging.
