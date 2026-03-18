@@ -322,3 +322,7 @@ Using `virtual:pwa-register` and importing a small client-only module (imported 
 
 Extracting CSV escaping into `app/utils/csv.ts` made it easy to unit-test edge cases (commas, quotes, newlines) and reduces duplication across export routes. When exporting CSV from server routes, prefer a shared utility to ensure consistent escaping and simplify future fixes.
 
+### Vitest: mocking Prisma DB & alias mapping
+
+When testing server modules that import from `~/db.server`, add the same `~` path alias to `vitest.config.ts` so Vite transforms can resolve imports during tests. Use `vi.mock('~/db.server', () => ({ db: { maintenanceType: { findMany: vi.fn() }, maintenanceRecord: { findMany: vi.fn() }, carMaintenanceOverride: { findMany: vi.fn() } } }))` or, better, create the mocks inside the factory and then `import { db } from '~/db.server'` in the test to set `db.maintenanceType.findMany.mockResolvedValue(...)`. Also freeze time for deterministic date math using `vi.setSystemTime()` for tests that rely on current date.
+
