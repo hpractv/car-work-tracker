@@ -376,3 +376,5 @@ Normalized VAPID env vars and re-check decoded redirect targets (double-encoding
 ## Convert server-only routes (2026-03-18)
 
 Converting .tsx -> .ts for server-only routes prevents them from being included in client bundles and avoids empty client chunks. During the build we observed empty chunks for server-only export routes; converting logout.tsx removed those empty chunks.
+### PWA icons & VAPID env (2026-03-18)
+Adding a favicon.svg entry to the web app manifest provides a vector icon alternative; keep PNG sizes for broad compatibility. Standardized the VAPID env doc to VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY and optional VITE_PUBLIC_VAPID_KEY for client exposure.

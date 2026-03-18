@@ -547,3 +547,15 @@ Tasks Completed: format.ts, csv.ts, session.server.ts, webpush.server.ts, update
 Tasks Attempted: convert logout.tsx
 Tasks Completed: converted logout.tsx -> logout.ts
 Build result: npm run build => success
+---
+[2026-03-18] Loop (batch tasks)
+
+Tasks Attempted:
+- Add favicon.svg to PWA manifest icons (vite.config.ts)
+- Standardize VAPID env var docs in .env.example
+
+Tasks Completed:
+- Added favicon.svg to PWA manifest icons ✅
+- Updated .env.example with VITE_PUBLIC_VAPID_KEY comment ✅
+
+Build result: npm run build ✅ exit code 0
