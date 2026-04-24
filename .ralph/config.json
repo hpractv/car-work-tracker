@@ -1,9 +1,0 @@
-{
-    "maxIterations": 0,
-    "allowFleet": true,
-    "projectRoot": "car-work-tracker",
-    "logs": {
-        "progress": ".ralph/logs/progress.txt",
-        "learnings": ".ralph/logs/learnings.md"
-    }
-}
