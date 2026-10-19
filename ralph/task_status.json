@@ -2,9 +2,56 @@
   "epic": "ci-green",
   "branch": "fix/ci-green",
   "status": "in_progress",
-  "loop": 0,
+  "loop": 1,
   "persona": "planning",
-  "selected": null,
+  "selected": "REQ-1",
   "completeEpic": false,
-  "tasks": []
+  "tasks": [
+    {
+      "id": "REQ-1",
+      "title": "Untrack prisma dev DB file(s) and ensure gitignore",
+      "status": "pending",
+      "passes": false,
+      "acceptanceCriteria": [
+        "No prisma dev DB paths in git index (git ls-files)",
+        ".gitignore covers prisma/dev.db and nested prisma/**/dev.db (+ journals)",
+        "No history rewrite; DB contents never printed"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "REQ-2",
+      "title": "Provide SESSION_SECRET in ci.yml",
+      "status": "pending",
+      "passes": false,
+      "acceptanceCriteria": [
+        "ci.yml sets SESSION_SECRET from secrets.SESSION_SECRET or CI-only dummy",
+        "Comment documents the dummy and that CI never deploys"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "REQ-3",
+      "title": "build and test:ci pass",
+      "status": "pending",
+      "passes": false,
+      "acceptanceCriteria": [
+        "npm run build succeeds with CI env",
+        "npm run test:ci succeeds with CI env",
+        "Any app/test change strictly required and explained; tests not weakened"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "REQ-4",
+      "title": "Prove locally with exact ci.yml steps on Node 18",
+      "status": "pending",
+      "passes": false,
+      "acceptanceCriteria": [
+        "All ci.yml steps run green locally on Node 18",
+        "Report notes PR Actions run will confirm (push trigger is main-only)"
+      ],
+      "notes": ""
+    }
+  ]
 }
