@@ -3,7 +3,7 @@
   "branch": "fix/ci-green",
   "status": "in_progress",
   "loop": 3,
-  "persona": "planning",
+  "persona": "qa",
   "selected": "REQ-3",
   "completeEpic": false,
   "tasks": [
@@ -33,14 +33,14 @@
     {
       "id": "REQ-3",
       "title": "build and test:ci pass",
-      "status": "pending",
-      "passes": false,
+      "status": "pass",
+      "passes": true,
       "acceptanceCriteria": [
         "npm run build succeeds with CI env",
         "npm run test:ci succeeds with CI env",
         "Any app/test change strictly required and explained; tests not weakened"
       ],
-      "notes": ""
+      "notes": "Renamed check-no-dev-db.js -> .cjs (ESM crash was real CI failure). package.json script updated. build OK; test:ci 44/44. No app/test code changes."
     },
     {
       "id": "REQ-4",
