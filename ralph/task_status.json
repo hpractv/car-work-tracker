@@ -3,7 +3,7 @@
   "branch": "fix/ci-green",
   "status": "in_progress",
   "loop": 2,
-  "persona": "dev",
+  "persona": "qa",
   "selected": "REQ-2",
   "completeEpic": false,
   "tasks": [
@@ -22,8 +22,8 @@
     {
       "id": "REQ-2",
       "title": "Provide SESSION_SECRET in ci.yml",
-      "status": "dev_done",
-      "passes": false,
+      "status": "pass",
+      "passes": true,
       "acceptanceCriteria": [
         "ci.yml sets SESSION_SECRET from secrets.SESSION_SECRET or CI-only dummy",
         "Comment documents the dummy and that CI never deploys"
