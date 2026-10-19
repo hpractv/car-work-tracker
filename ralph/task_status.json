@@ -1,11 +1,11 @@
 {
   "epic": "ci-green",
   "branch": "fix/ci-green",
-  "status": "in_progress",
+  "status": "complete",
   "loop": 4,
-  "persona": "planning",
-  "selected": "REQ-4",
-  "completeEpic": false,
+  "persona": "qa",
+  "selected": null,
+  "completeEpic": true,
   "tasks": [
     {
       "id": "REQ-1",
@@ -45,13 +45,13 @@
     {
       "id": "REQ-4",
       "title": "Prove locally with exact ci.yml steps on Node 18",
-      "status": "pending",
-      "passes": false,
+      "status": "pass",
+      "passes": true,
       "acceptanceCriteria": [
         "All ci.yml steps run green locally on Node 18",
         "Report notes PR Actions run will confirm (push trigger is main-only)"
       ],
-      "notes": ""
+      "notes": "Node 18.20.8 local run of exact ci.yml steps all exit 0; 44 tests. PR Actions will confirm."
     }
   ]
 }

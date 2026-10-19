@@ -31,3 +31,18 @@ QA writes evidence here each loop.
 - `npm run build` → OK
 - `npm run test:ci` → 14 files / **44 tests passed**
 - No tests weakened or skipped; no app/ code edits
+
+## Loop 4 — REQ-4 PASS
+
+Exact `ci.yml` step sequence on **Node v18.20.8** (nvm), with
+`SESSION_SECRET=ci-only-dummy-session-secret-not-for-production`:
+
+| Step | Result |
+|------|--------|
+| `npm ci` | OK |
+| `npm run check:no-dev-db` | exit 0 |
+| `npm run check:env` | exit 0 |
+| `npm run build` | exit 0 |
+| `npm run test:ci` | exit 0 — 14 files / 44 tests |
+
+Note: workflow `on.push` only lists `main`/`master`; a PR into main will run Actions via `pull_request` and confirm on the PR head. Push to `fix/ci-green` alone does not trigger this workflow.
