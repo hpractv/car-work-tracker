@@ -3,7 +3,7 @@
   "branch": "fix/ci-green",
   "status": "in_progress",
   "loop": 2,
-  "persona": "planning",
+  "persona": "dev",
   "selected": "REQ-2",
   "completeEpic": false,
   "tasks": [
@@ -22,13 +22,13 @@
     {
       "id": "REQ-2",
       "title": "Provide SESSION_SECRET in ci.yml",
-      "status": "pending",
+      "status": "dev_done",
       "passes": false,
       "acceptanceCriteria": [
         "ci.yml sets SESSION_SECRET from secrets.SESSION_SECRET or CI-only dummy",
         "Comment documents the dummy and that CI never deploys"
       ],
-      "notes": ""
+      "notes": "ci.yml job env SESSION_SECRET: secrets.SESSION_SECRET when set, else CI-only dummy; comment documents non-deploy use."
     },
     {
       "id": "REQ-3",

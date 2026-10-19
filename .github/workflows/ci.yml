@@ -9,6 +9,11 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      # Prefer the repo secret when configured. CI never deploys; if the secret is
+      # unset, use a clearly CI-only dummy so check:env / session code can run.
+      # Dummy value is NOT for production and must never be copied into real secrets.
+      SESSION_SECRET: ${{ secrets.SESSION_SECRET != '' && secrets.SESSION_SECRET || 'ci-only-dummy-session-secret-not-for-production' }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
