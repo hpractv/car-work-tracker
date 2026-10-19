@@ -46,3 +46,7 @@ Exact `ci.yml` step sequence on **Node v18.20.8** (nvm), with
 | `npm run test:ci` | exit 0 — 14 files / 44 tests |
 
 Note: workflow `on.push` only lists `main`/`master`; a PR into main will run Actions via `pull_request` and confirm on the PR head. Push to `fix/ci-green` alone does not trigger this workflow.
+
+## Release
+
+`completeEpic: true`. Opening PR into main: **Fix CI: untrack dev DB, provide SESSION_SECRET**. Not merging.
