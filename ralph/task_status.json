@@ -1,0 +1,10 @@
+{
+  "epic": "ci-green",
+  "branch": "fix/ci-green",
+  "status": "in_progress",
+  "loop": 0,
+  "persona": "planning",
+  "selected": null,
+  "completeEpic": false,
+  "tasks": []
+}
