@@ -2,9 +2,9 @@
   "epic": "ci-green",
   "branch": "fix/ci-green",
   "status": "in_progress",
-  "loop": 1,
-  "persona": "qa",
-  "selected": "REQ-1",
+  "loop": 2,
+  "persona": "planning",
+  "selected": "REQ-2",
   "completeEpic": false,
   "tasks": [
     {
