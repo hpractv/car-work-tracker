@@ -3,21 +3,21 @@
   "branch": "fix/ci-green",
   "status": "in_progress",
   "loop": 1,
-  "persona": "planning",
+  "persona": "dev",
   "selected": "REQ-1",
   "completeEpic": false,
   "tasks": [
     {
       "id": "REQ-1",
       "title": "Untrack prisma dev DB file(s) and ensure gitignore",
-      "status": "pending",
+      "status": "dev_done",
       "passes": false,
       "acceptanceCriteria": [
         "No prisma dev DB paths in git index (git ls-files)",
         ".gitignore covers prisma/dev.db and nested prisma/**/dev.db (+ journals)",
         "No history rewrite; DB contents never printed"
       ],
-      "notes": ""
+      "notes": "No prisma dev DB paths in index. Ran git rm --cached --ignore-unmatch on known paths (no-op). Hardened .gitignore with **/dev.db patterns. No history rewrite; contents never printed."
     },
     {
       "id": "REQ-2",
