@@ -1,9 +1,12 @@
 node_modules/
 build/
 .env
+*.js.map
+
+# Prisma local SQLite — never commit (flat, nested, or accidental paths)
 prisma/dev.db
 prisma/dev.db-journal
-*.js.map
-# Ignore nested Prisma dev DB files
 prisma/**/dev.db
 prisma/**/dev.db-journal
+**/dev.db
+**/dev.db-journal
