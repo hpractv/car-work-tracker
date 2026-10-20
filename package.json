@@ -20,7 +20,7 @@
     "gen:vapid": "node ./scripts/generate-vapid.cjs",
     "check:env": "node ./scripts/check-env.cjs",
     "check:pwa-assets": "node ./scripts/check-pwa-assets.cjs",
-    "check:no-dev-db": "node ./scripts/check-no-dev-db.js",
+    "check:no-dev-db": "node ./scripts/check-no-dev-db.cjs",
     "ci": "npm run check:no-dev-db && npm run check:env && npm run typecheck && npm run build && npm run test:ci"
   },
   "dependencies": {
