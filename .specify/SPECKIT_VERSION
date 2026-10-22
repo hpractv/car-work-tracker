@@ -1,0 +1,8 @@
+version=1.2.0
+source=git+https://github.com/github/spec-kit.git@v1.2.0
+install_command=uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v1.2.0
+resolved_commit=4ca46a0706a662b1edc07086ef16f021820c2db0
+release_url=https://github.com/github/spec-kit/releases/tag/v1.2.0
+tag=v1.2.0
+integration=cursor-agent
+init_command=specify init --here --force --non-interactive --integration cursor-agent --ignore-agent-tools
