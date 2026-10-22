@@ -1,0 +1,23 @@
+schema_version: "1.0"
+preset:
+  id: "ralph-handoff"
+  name: "Ralph Handoff"
+  version: "0.1.0"
+  description: "Replace implement/converge with a handoff to Roy's Ralph loop (single execution path)"
+  author: "roy"
+  license: "MIT"
+requires:
+  speckit_version: ">=1.0.0"
+provides:
+  templates:
+    - type: "command"
+      name: "speckit.implement"
+      file: "commands/speckit.implement.md"
+      description: "Hand off to Ralph (no in-session coding)"
+      replaces: "speckit.implement"
+    - type: "command"
+      name: "speckit.converge"
+      file: "commands/speckit.converge.md"
+      description: "Fold Ralph QA gaps into ralph/task_status.json"
+      replaces: "speckit.converge"
+tags: ["ralph"]

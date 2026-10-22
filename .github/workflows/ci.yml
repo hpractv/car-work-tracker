@@ -7,6 +7,17 @@ on:
     branches: [ main, master ]
 
 jobs:
+  # Spec Kit / Ralph guard runs independently so a red app step cannot skip it
+  # (Iris D: previous layout put these after check:no-dev-db, which failed first).
+  ralph-handoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ralph handoff guard
+        run: bash .specify/scripts/check-ralph-handoff.sh
+      - name: Speckit-to-ralph converter unit tests
+        run: python3 -m unittest discover -s .specify/scripts/tests -v
+
   build-and-test:
     runs-on: ubuntu-latest
     env:
